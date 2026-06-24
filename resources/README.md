@@ -5,18 +5,19 @@ where the relevant code already lives inside HOG2.
 
 ## Papers (`papers/`)
 
-Save the 7 PDFs from Lior's email here. Suggested reading order (per the email:
-start with Siag; if clear, continue to Eckerle; otherwise read in numbered order):
+All 7 PDFs from Lior's email are here (extracted from `fwd.zip`). Suggested reading
+order (per the email: start with Siag; if clear, continue to Eckerle; otherwise read
+in numbered order):
 
-| # | Short name  | Topic                                                            |
-|---|-------------|------------------------------------------------------------------|
-| 2 | **Siag**        | Big-picture theory of the lower bound (LB) in bidirectional search |
-| 3 | **Eckerle**     | The mathematics of which nodes a bidirectional search *must* expand |
-| 4 | **Shaham**      | Extends the must-expand understanding                            |
-| 5 | **Shaham 2018** | Assumes a consistent heuristic                                   |
-| 1 | **Holte**       | An algorithm that always meets in the middle (MM)                |
-| 6 | **Alcazar**     | State of the art (SOTA) in bidirectional search                  |
-| — | **Domain paper** | *Voxel Benchmarks for 3D Pathfinding — Sandstone, Descent, and Industrial Plants* |
+| # | File | Title |
+|---|------|-------|
+| 2 | `2-Siag-bidirectional-LB-theory.pdf` | Big-picture theory of the lower bound (LB) in bidirectional search |
+| 3 | `3-Eckerle-2017-sufficient-conditions-node-expansion.pdf` | Sufficient Conditions for Node Expansion in Bidirectional Heuristic Search |
+| 4 | `4-Shaham-2017-minimal-set-must-expand.pdf` | The Minimal Set of States that Must Be Expanded in a Front-to-End Bidirectional Search |
+| 5 | `5-Shaham-2018-consistent-heuristics.pdf` | Minimizing Node Expansions in Bidirectional Search with Consistent Heuristics |
+| 1 | `1-Holte-2017-MM-meet-in-the-middle.pdf` | MM: A bidirectional search algorithm guaranteed to meet in the middle |
+| 6 | `6-Alcazar-2020-unifying-view-individual-bounds.pdf` | A Unifying View on Individual Bounds and Heuristic Inaccuracies in Bidirectional Search |
+| — | `domain-Voxel-Benchmarks-3D-Pathfinding.pdf` | Voxel Benchmarks for 3D Pathfinding — Sandstone, Descent, and Industrial Plants |
 
 ## External repositories & links
 

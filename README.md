@@ -82,7 +82,7 @@ map are in [`resources/README.md`](resources/README.md).
 ## Status
 
 - [x] Workspace scaffolded; HOG2 cloned locally; documentation written.
-- [ ] Papers added to `resources/papers/`.
+- [x] Papers added to `resources/papers/` (all 7).
 - [ ] Benchmarks downloaded.
 - [ ] Warthog → HOG2 voxel loader confirmed/written.
 - [ ] All algorithms run from both sides; results collected.
