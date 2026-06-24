@@ -1,0 +1,29 @@
+# === Large external dependencies (cloned/downloaded locally, not committed) ===
+# HOG2 search framework — clone with workspace/scripts/setup.sh
+workspace/hog2/
+# Warthog voxel-map benchmarks — download with workspace/scripts/fetch-benchmarks.sh
+workspace/benchmarks/
+
+# === Build artifacts ===
+workspace/**/bin/
+workspace/**/build/objs/
+*.o
+*.a
+*.out
+*.exe
+a.out
+
+# === Experiment outputs (keep curated results in deliverables/, ignore raw dumps) ===
+workspace/results/
+*.log
+*.tmp
+
+# === Papers: PDFs can be large; uncomment to keep them out of git ===
+# resources/papers/*.pdf
+
+# === OS / editor cruft ===
+.DS_Store
+*.swp
+.idea/
+.vscode/
+*~
