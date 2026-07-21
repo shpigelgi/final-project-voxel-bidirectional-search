@@ -21,23 +21,27 @@ cd workspace
 ./scripts/fetch-benchmarks.sh  # sparse-download the Warthog voxel maps into benchmarks/
 ```
 
-## Building HOG2
+## Building (headless — no OpenGL/GLUT)
 
-HOG2 builds with `make` (no cmake needed) using the makefiles under `hog2/build/`.
-On macOS you can also open the Xcode project under `hog2/build/XCode/`. To build the
-voxel app from the command line, see HOG2's own `README.md` and the `hog2/build/`
-makefiles. Typical flow:
+We do **not** use HOG2's GUI app. Our tools link only HOG2's graphics-free search core:
 
 ```bash
-cd hog2/build/gmake   # (path may vary by HOG2 version)
-make voxel            # builds the apps/voxel target
+./src/build.sh workspace/bin      # -> bin/voxdriver, bin/mvc
 ```
 
-## Requirements (already verified on this machine)
+- `bin/voxdriver` — runs the algorithms on a map/scenario, CSV out, per-instance timeout
+  and memory cap (fork-per-run). See `src/driver.cpp`.
+- `bin/mvc` — per-instance must-expand floor (Minimum Vertex Cover). See `src/mvc.cpp`.
 
-- `git` ✓
-- C++ compiler (`clang`/`g++`) ✓
-- OpenGL/GLUT may be needed for HOG2's GUI targets; headless benchmark runs avoid it.
+Only needs `git` and a C++17 compiler (`g++`/`clang++`). No cmake, no OpenGL.
 
-See `../resources/README.md` for the map of which HOG2 files implement each algorithm
-and the voxel domain.
+## Running experiments
+
+- **Locally / quick:** `bin/voxdriver <map.3dmap> <scen.3dscen> --limit N` (see `--help` args
+  in `src/driver.cpp`); `bin/mvc <map> <scen>` for the floor.
+- **On the cluster:** see [`cluster/RUNBOOK.md`](cluster/RUNBOOK.md) — `submit.sh` builds,
+  generates a manifest, and submits a Slurm array (one task per map×config); `aggregate.py`
+  joins results with the MVC floor into summary tables.
+
+See `src/FINDINGS.md` for the format spec, HOG2 map, and results so far, and
+`../resources/README.md` for which HOG2 files implement each algorithm and the voxel domain.

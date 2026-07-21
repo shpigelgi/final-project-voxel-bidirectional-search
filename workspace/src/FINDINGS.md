@@ -135,11 +135,19 @@ queue (keyed on `pair<double,double>`) is expensive; worth profiling if MM stays
 ## 5. Remaining work (in priority order)
 
 1. ~~Investigate BAE\* suboptimality~~ — **done** (gcd rounding; see §4.1).
-2. **Zip handling** — either unzip in the fetch step (current) or read `.3dmap.zip` directly.
+2. ~~Zip handling~~ — **done**: `scripts/fetch-benchmarks.sh` unzips on download.
 3. ~~MVC / must-expand floor~~ — **done** (`mvc.cpp`, base admissible case; see §4).
    Future: the tighter *consistency-aware* floor (add the h_C term / max-flow, Shaham 2018 & Siag 2025).
-4. **Scale**: `std::vector<bool>` is fine to ~1.3 B voxels (~160 MB); add per-instance
-   timeouts and run the full 2000-instance scenarios off the main thread.
+4. ~~Scale / timeouts~~ — **done**: driver is fork-per-run with wall-clock timeout +
+   RLIMIT_AS memory cap; Slurm harness in `cluster/` (see `cluster/RUNBOOK.md`).
+   `std::vector<bool>` handles ~1.3 B-voxel descent maps (~160 MB); give those tasks more `--mem`.
 5. **BiA\***: pick HOG2's mapping (bidirectional A\* ≈ MM with f-priority, or a dedicated
-   class) — currently not wired.
-6. **Sandstone (`rev_voxel`) end-to-end test** — loader supports it; download one and confirm.
+   class) — currently not wired. (The brief lists it; needs a design choice.)
+6. ~~Sandstone (`rev_voxel`) end-to-end test~~ — **done**: BSG loads and solves optimally.
+
+### Cluster harness (`workspace/cluster/`)
+`make_manifest.sh` (map×config units) → `submit.sh` (build + Slurm array) →
+`run_array.sbatch` (one task per unit; runs `mvc` + `voxdriver`) → `aggregate.py`
+(join with floor + summary + cross-algorithm optimality check). See `RUNBOOK.md`.
+Note: in `nodiag` (6-connected) mode the scenario's optimal cost does not apply
+(it is computed with diagonals), so optimality is verified by algorithm agreement.
