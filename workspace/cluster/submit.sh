@@ -27,8 +27,8 @@ if [ "$N" -eq 0 ]; then echo "Empty manifest — nothing to submit." >&2; exit 1
 CONC="${CONC:-20}"
 mkdir -p "$CLUSTER_DIR/logs"
 
-extra=()
-[ -n "${PARTITION:-}" ] && extra+=(--partition="$PARTITION")
+PARTITION="${PARTITION:-cpu}"   # BGU: dedicated CPU partition (our jobs are CPU-only, no GPU)
+extra=(--partition="$PARTITION")
 [ -n "${ACCOUNT:-}" ]   && extra+=(--account="$ACCOUNT")
 
 echo "== Submitting array 1-$N%$CONC =="

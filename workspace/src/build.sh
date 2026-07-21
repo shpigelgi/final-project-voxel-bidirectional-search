@@ -10,6 +10,12 @@ HOG="$WS/hog2"
 OUTDIR="${1:-$HERE}"
 mkdir -p "$OUTDIR"
 
+# Compiler is configurable so the BGU cluster (no system g++/clang; use a conda
+# toolchain) can pass e.g. CXX=x86_64-conda-linux-gnu-g++ and
+# XFLAGS="-static-libstdc++ -static-libgcc" for a portable, self-contained binary.
+CXX="${CXX:-g++}"
+XFLAGS="${XFLAGS:-}"
+
 # Include every HOG2 source dir (space-safe: one dir, e.g. "gui/MAC/HID Support",
 # contains a space and MUST be quoted — an unquoted flag list silently drops
 # every -I and the build fails with "SearchEnvironment.h not found").
@@ -19,14 +25,14 @@ while IFS= read -r d; do INCS+=("-I$d"); done \
 
 DEPS=("$HOG/utils/Timer.cpp" "$HOG/utils/FPUtil.cpp")
 
-g++ -std=c++17 -O2 -o "$OUTDIR/voxdriver" "$HERE/driver.cpp" "${DEPS[@]}" "${INCS[@]}"
+"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/voxdriver" "$HERE/driver.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/voxdriver"
 
-g++ -std=c++17 -O2 -o "$OUTDIR/mvc" "$HERE/mvc.cpp" "${DEPS[@]}" "${INCS[@]}"
+"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/mvc" "$HERE/mvc.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/mvc"
 
-g++ -std=c++17 -O2 -o "$OUTDIR/trace" "$HERE/trace.cpp" "${DEPS[@]}" "${INCS[@]}"
+"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/trace" "$HERE/trace.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/trace"
 
-g++ -std=c++17 -O2 -o "$OUTDIR/validate" "$HERE/validate.cpp" "${DEPS[@]}" "${INCS[@]}"
+"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/validate" "$HERE/validate.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/validate"
