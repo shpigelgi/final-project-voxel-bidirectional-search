@@ -84,8 +84,8 @@ public:
 			nListed++;
 		}
 		fclose(f);
-		printf("VoxelMap: loaded '%s' [%s] %dx%dx%d, %zu listed voxels, diagonals=%d\n",
-			   filename, type, xWidth, yWidth, zWidth, nListed, (int)diagonals);
+		fprintf(stderr, "VoxelMap: loaded '%s' [%s] %dx%dx%d, %zu listed voxels, diagonals=%d\n",
+				filename, type, xWidth, yWidth, zWidth, nListed, (int)diagonals);
 	}
 
 	void SetDiagonals(bool d) { diagonals = d; }

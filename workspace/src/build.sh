@@ -7,7 +7,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS="$(cd "$HERE/.." && pwd)"
 HOG="$WS/hog2"
-OUT="${1:-$HERE/voxdriver}"
+OUTDIR="${1:-$HERE}"
 
 # Include every HOG2 source dir (space-safe: one dir, e.g. "gui/MAC/HID Support",
 # contains a space and MUST be quoted — an unquoted flag list silently drops
@@ -16,10 +16,10 @@ INCS=()
 while IFS= read -r d; do INCS+=("-I$d"); done \
   < <(find "$HOG" -type d -not -path '*/build/*' -not -path '*/.git/*')
 
-g++ -std=c++17 -O2 -o "$OUT" \
-    "$HERE/driver.cpp" \
-    "$HOG/utils/Timer.cpp" \
-    "$HOG/utils/FPUtil.cpp" \
-    "${INCS[@]}"
+DEPS=("$HOG/utils/Timer.cpp" "$HOG/utils/FPUtil.cpp")
 
-echo "Built: $OUT"
+g++ -std=c++17 -O2 -o "$OUTDIR/voxdriver" "$HERE/driver.cpp" "${DEPS[@]}" "${INCS[@]}"
+echo "Built: $OUTDIR/voxdriver"
+
+g++ -std=c++17 -O2 -o "$OUTDIR/mvc" "$HERE/mvc.cpp" "${DEPS[@]}" "${INCS[@]}"
+echo "Built: $OUTDIR/mvc"

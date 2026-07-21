@@ -67,7 +67,12 @@ driver, which we don't use. So a headless build needs only two `.cpp` files
 - **`driver.cpp`** — headless experiment driver. Parses `version 2` scenarios, runs
   A\*, reverse A\*, MM, BAE\*, NBS, GBFS from both directions, emits CSV
   (`instance,alg,expanded,generated,cost,optimal,time_ms,optimal_ok`).
-- **`build.sh`** — one-command headless build (`./build.sh` → `src/voxdriver`).
+- **`mvc.cpp`** — computes the per-instance **must-expand floor** = Minimum Vertex Cover
+  of G_MX (Eckerle/Chen; Shaham 2017 threshold scan, base admissible case). Expands each
+  direction's f<C\* contour, buckets g-values, and minimizes `#{g_F<τ}+#{g_B<C*−τ}`.
+  Emits `instance,cstar,fwd_cand,bwd_cand,mvc`. This is the denominator for the
+  expansion-ratio analysis the papers use.
+- **`build.sh`** — one-command headless build (`./build.sh` → `src/voxdriver` + `src/mvc`).
 
 Run: `./voxdriver <map.3dmap> <scen.3dscen> [--limit N] [--no-diagonals] [--algs ...]`
 (unzip the `.3dmap.zip` first, or add zip handling — currently done in the fetch step).
@@ -105,6 +110,23 @@ Two real findings from the spike:
    often competitive/best and directional asymmetry dominates). Encouraging that the
    toy run already reproduces the expected qualitative behaviour.
 
+### Expansion vs. the must-expand floor (plant01, `mvc` tool)
+Average `expanded / MVC` over the harder instances, with **0 lower-bound violations**
+(every algorithm expands ≥ MVC, confirming the floor is valid):
+
+| alg | avg exp/MVC |
+|---|---:|
+| astar | **1.49** |
+| nbs | 12.83 |
+| bae | 15.92 |
+| mm | 25.70 |
+| rastar | 40.27 |
+
+On these plant maps the MVC equals the forward-candidate count (forward f<C\* region is
+far smaller than backward), so A\* sits near the floor while bidirectional search pays a
+large premium. This is a domain-specific result — expect it to shift on sandstone/descent
+and with weaker heuristics; the point is the measurement pipeline now works end-to-end.
+
 MM's per-instance time is an outlier (~327 ms vs single-digit ms) — HOG2's MM priority
 queue (keyed on `pair<double,double>`) is expensive; worth profiling if MM stays in scope.
 
@@ -114,7 +136,8 @@ queue (keyed on `pair<double,double>`) is expensive; worth profiling if MM stays
 
 1. ~~Investigate BAE\* suboptimality~~ — **done** (gcd rounding; see §4.1).
 2. **Zip handling** — either unzip in the fetch step (current) or read `.3dmap.zip` directly.
-3. **MVC / must-expand floor** per instance for the expansion-ratio analysis (the papers' yardstick).
+3. ~~MVC / must-expand floor~~ — **done** (`mvc.cpp`, base admissible case; see §4).
+   Future: the tighter *consistency-aware* floor (add the h_C term / max-flow, Shaham 2018 & Siag 2025).
 4. **Scale**: `std::vector<bool>` is fine to ~1.3 B voxels (~160 MB); add per-instance
    timeouts and run the full 2000-instance scenarios off the main thread.
 5. **BiA\***: pick HOG2's mapping (bidirectional A\* ≈ MM with f-priority, or a dedicated
