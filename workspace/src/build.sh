@@ -24,3 +24,6 @@ echo "Built: $OUTDIR/voxdriver"
 
 g++ -std=c++17 -O2 -o "$OUTDIR/mvc" "$HERE/mvc.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/mvc"
+
+g++ -std=c++17 -O2 -o "$OUTDIR/trace" "$HERE/trace.cpp" "${DEPS[@]}" "${INCS[@]}"
+echo "Built: $OUTDIR/trace"

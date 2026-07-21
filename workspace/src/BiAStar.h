@@ -58,6 +58,12 @@ public:
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 
+	// Inspection (used by the trace tool). The node's .h field holds its priority (the f-value).
+	int GetNumForwardItems() { return forwardQueue.size(); }
+	const AStarOpenClosedData<state> &GetForwardItem(unsigned int i) { return forwardQueue.Lookat(i); }
+	int GetNumBackwardItems() { return backwardQueue.size(); }
+	const AStarOpenClosedData<state> &GetBackwardItem(unsigned int i) { return backwardQueue.Lookat(i); }
+
 	bool InitializeSearch(environment *e, const state &from, const state &to,
 						  Heuristic<state> *forward, Heuristic<state> *backward, std::vector<state> &thePath) {
 		env = e; forwardHeuristic = forward; backwardHeuristic = backward;
