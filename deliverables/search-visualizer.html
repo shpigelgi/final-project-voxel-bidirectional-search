@@ -11,7 +11,7 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%}
   body{background:var(--bg);color:var(--ink);font-family:var(--sans);
-    display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
   header{display:flex;align-items:baseline;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   header h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.2px}
   header .sub{font-family:var(--mono);font-size:12px;color:var(--dim)}
@@ -22,8 +22,8 @@
   .tab[aria-selected="true"]{color:var(--bg);background:var(--accent);border-color:var(--accent);font-weight:600}
   .tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   main{flex:1;display:flex;min-height:0}
-  #stage{flex:1;position:relative;min-width:0;min-height:340px}
-  canvas{display:block;width:100%;height:100%;cursor:grab}
+  #stage{flex:1;position:relative;min-width:0;min-height:200px}
+  canvas{display:block;width:100%;height:100%;cursor:grab;touch-action:none}
   canvas:active{cursor:grabbing}
   .hint{position:absolute;left:14px;bottom:12px;font-family:var(--mono);font-size:11px;color:var(--dim);
     pointer-events:none;user-select:none}
@@ -49,7 +49,15 @@
   .scrub .count{font-family:var(--mono);font-size:12px;color:var(--dim);white-space:nowrap;font-variant-numeric:tabular-nums}
   .speed{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
   .speed input{accent-color:var(--accent);width:90px}
-  @media (max-width:720px){ aside{display:none} }
+  @media (max-width:720px){
+    aside{display:none}
+    header .sub{display:none}                     /* free horizontal room for the tabs */
+    .scrub{min-width:140px}
+  }
+  @media (max-height:430px){                        /* short panels: trim chrome so the scene keeps room */
+    header,footer{padding-top:7px;padding-bottom:7px}
+    header .sub{display:none}
+  }
 </style>
 
 <header>
