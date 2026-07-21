@@ -126,13 +126,18 @@ window.addEventListener('resize', ()=>{resize();draw();});
 let G=null;
 function prep(){
   const d=DATA[cur];
-  const [dx,dy,dz]=d.dims;
-  const cx=dx/2, cy=dy/2, cz=dz/2;
-  const scale=1/Math.max(dx,dy,dz);
-  const n = d.nodes.map(p=>({x:(p[0]-cx)*scale,y:(p[1]-cy)*scale,z:(p[2]-cz)*scale,s:p[3]}));
-  const path = d.path.map(p=>({x:(p[0]-cx)*scale,y:(p[1]-cy)*scale,z:(p[2]-cz)*scale}));
+  const obsRaw = DATA._obstacles||[];
+  // Frame to the CONTENT bounding box (search + walls + path + endpoints),
+  // not the whole map — otherwise the searched region is a tiny clump in a huge cube.
+  const lo=[1e9,1e9,1e9], hi=[-1e9,-1e9,-1e9];
+  const grow=p=>{for(let i=0;i<3;i++){if(p[i]<lo[i])lo[i]=p[i];if(p[i]>hi[i])hi[i]=p[i];}};
+  d.nodes.forEach(grow); obsRaw.forEach(grow); d.path.forEach(grow); grow(d.start); grow(d.goal);
+  const cx=(lo[0]+hi[0])/2, cy=(lo[1]+hi[1])/2, cz=(lo[2]+hi[2])/2;
+  const scale=1/Math.max(hi[0]-lo[0], hi[1]-lo[1], hi[2]-lo[2], 1);
   const norm = p=>({x:(p[0]-cx)*scale,y:(p[1]-cy)*scale,z:(p[2]-cz)*scale});
-  const obs = (DATA._obstacles||[]).map(p=>({x:(p[0]-cx)*scale,y:(p[1]-cy)*scale,z:(p[2]-cz)*scale}));
+  const n = d.nodes.map(p=>({...norm(p),s:p[3]}));
+  const path = d.path.map(norm);
+  const obs = obsRaw.map(norm);
   G={d,n,path,obs,start:norm(d.start),goal:norm(d.goal)};
   revealed=0;
   document.getElementById('mapinfo').textContent =
@@ -237,7 +242,7 @@ document.getElementById('showmap').onchange=e=>{showMap=e.target.checked;draw();
 // tabs
 const tabs=document.getElementById('tabs');
 const NAMES={astar:'A*',mm:'MM',bia:'BiA*',bae:'BAE*'};
-for(const key of Object.keys(DATA)){
+for(const key of Object.keys(DATA).filter(k=>k[0]!=='_')){
   const b=document.createElement('button');b.className='tab';b.textContent=NAMES[key]||key;
   b.setAttribute('role','tab');b.setAttribute('aria-selected',key===cur);
   b.onclick=()=>{cur=key;pause();document.getElementById('play').textContent='Play';
