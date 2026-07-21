@@ -67,6 +67,10 @@ driver, which we don't use. So a headless build needs only two `.cpp` files
 - **`driver.cpp`** — headless experiment driver. Parses `version 2` scenarios, runs
   A\*, reverse A\*, MM, BAE\*, NBS, GBFS from both directions, emits CSV
   (`instance,alg,expanded,generated,cost,optimal,time_ms,optimal_ok`).
+- **`BiAStar.h`** — Pohl-style bidirectional A\* (BS\*): the brief's "BiA\*". HOG2 has no
+  such class, so we provide one (adapted from `BAE.h`'s skeleton) with priority `f=g+h` and
+  the classic optimal termination `U ≤ max(fMin_F, fMin_B)`. Verified optimal on plant01
+  (~2× A\* expansions — both frontiers, no meet-in-the-middle cap).
 - **`mvc.cpp`** — computes the per-instance **must-expand floor** = Minimum Vertex Cover
   of G_MX (Eckerle/Chen; Shaham 2017 threshold scan, base admissible case). Expands each
   direction's f<C\* contour, buckets g-values, and minimizes `#{g_F<τ}+#{g_B<C*−τ}`.
@@ -141,8 +145,9 @@ queue (keyed on `pair<double,double>`) is expensive; worth profiling if MM stays
 4. ~~Scale / timeouts~~ — **done**: driver is fork-per-run with wall-clock timeout +
    RLIMIT_AS memory cap; Slurm harness in `cluster/` (see `cluster/RUNBOOK.md`).
    `std::vector<bool>` handles ~1.3 B-voxel descent maps (~160 MB); give those tasks more `--mem`.
-5. **BiA\***: pick HOG2's mapping (bidirectional A\* ≈ MM with f-priority, or a dedicated
-   class) — currently not wired. (The brief lists it; needs a design choice.)
+5. ~~BiA\*~~ — **done**: implemented as Pohl-style bidirectional A\* (`BiAStar.h`, alg
+   name `bia`), since HOG2 has no such class. Priority `f=g+h`, termination
+   `U ≤ max(fMin_F,fMin_B)`.
 6. ~~Sandstone (`rev_voxel`) end-to-end test~~ — **done**: BSG loads and solves optimally.
 
 ### Cluster harness (`workspace/cluster/`)

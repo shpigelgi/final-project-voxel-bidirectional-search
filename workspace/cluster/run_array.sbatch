@@ -20,7 +20,7 @@ set -euo pipefail
 ROOT="${ROOT:?ROOT must be set (workspace dir)}"
 TIMEOUT="${TIMEOUT:-60}"
 MEMMB="${MEMMB:-9000}"
-ALGS="${ALGS:-astar,rastar,mm,bae,nbs,gbfs}"
+ALGS="${ALGS:-astar,rastar,mm,bia,bae,nbs,gbfs}"
 LIMIT="${LIMIT:-1000000}"
 
 MANIFEST="$ROOT/cluster/manifest.tsv"

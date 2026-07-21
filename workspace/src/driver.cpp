@@ -32,6 +32,7 @@
 #include <sys/resource.h>
 #include <signal.h>
 #include "VoxelMap.h"
+#include "BiAStar.h"
 #include "Timer.h"
 #include "TemplateAStar.h"
 #include "MM.h"
@@ -87,6 +88,10 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 		NBS<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
 		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); cost = env.GetPathLength(path);
+	} else if (alg == "bia") {
+		BiAStar<voxState, voxAction, VoxelMap> a;
+		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
+		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); cost = env.GetPathLength(path);
 	} else if (alg == "gbfs") {
 		BidirectionalGreedyBestFirst<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, path, bpath); t.EndTimer();
@@ -125,7 +130,7 @@ int main(int argc, char *argv[])
 	double timeoutSec = 0;      // 0 = no timeout
 	long memMB = 0;             // 0 = no cap
 	std::string tag = "";
-	std::vector<std::string> algs = {"astar", "rastar", "mm", "bae", "nbs", "gbfs"};
+	std::vector<std::string> algs = {"astar", "rastar", "mm", "bia", "bae", "nbs", "gbfs"};
 
 	for (int i = 3; i < argc; i++) {
 		if      (!strcmp(argv[i], "--limit")   && i+1 < argc) limit = atoi(argv[++i]);

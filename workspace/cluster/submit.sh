@@ -33,7 +33,7 @@ extra=()
 
 echo "== Submitting array 1-$N%$CONC =="
 sbatch --array="1-${N}%${CONC}" \
-       --export=ALL,ROOT="$WS",TIMEOUT="${TIMEOUT:-60}",MEMMB="${MEMMB:-9000}",ALGS="${ALGS:-astar,rastar,mm,bae,nbs,gbfs}",LIMIT="${LIMIT:-1000000}" \
+       --export=ALL,ROOT="$WS",TIMEOUT="${TIMEOUT:-60}",MEMMB="${MEMMB:-9000}",ALGS="${ALGS:-astar,rastar,mm,bia,bae,nbs,gbfs}",LIMIT="${LIMIT:-1000000}" \
        "${extra[@]}" \
        "$CLUSTER_DIR/run_array.sbatch"
 
