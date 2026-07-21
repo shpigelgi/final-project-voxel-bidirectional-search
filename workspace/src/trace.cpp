@@ -27,7 +27,8 @@ struct Node { int x, y, z; double g, key; int side; }; // side 0=forward,1=backw
 
 static void emit(const VoxelMap &env, int W, int H, int D,
 				 const voxState &s, const voxState &g, const std::string &alg, bool diag,
-				 double cost, const std::vector<Node> &nodes, const std::vector<voxState> &path)
+				 double cost, const std::vector<Node> &nodes, const std::vector<voxState> &path,
+				 const std::vector<voxState> &obstacles)
 {
 	printf("{\n");
 	printf("  \"alg\": \"%s\", \"diag\": %s,\n", alg.c_str(), diag ? "true" : "false");
@@ -40,10 +41,48 @@ static void emit(const VoxelMap &env, int W, int H, int D,
 		printf("%s[%d,%d,%d,%d,%.4f]", i ? "," : "", nodes[i].x, nodes[i].y, nodes[i].z,
 			   nodes[i].side, nodes[i].key);
 	printf("],\n");
+	printf("  \"obstacles\": [");
+	for (size_t i = 0; i < obstacles.size(); i++)
+		printf("%s[%d,%d,%d]", i ? "," : "", obstacles[i].x, obstacles[i].y, obstacles[i].z);
+	printf("],\n");
 	printf("  \"path\": [");
 	for (size_t i = 0; i < path.size(); i++)
 		printf("%s[%d,%d,%d]", i ? "," : "", path[i].x, path[i].y, path[i].z);
 	printf("]\n}\n");
+}
+
+// Collect obstacle voxels inside the bounding box of the search (nodes + path +
+// endpoints), padded by a margin. Capped by striding so the trace stays small.
+static std::vector<voxState> collectObstacles(const VoxelMap &env, int W, int H, int D,
+		const std::vector<Node> &nodes, const std::vector<voxState> &path,
+		const voxState &s, const voxState &g)
+{
+	int lo[3] = {W, H, D}, hi[3] = {0, 0, 0};
+	auto grow = [&](int x, int y, int z){
+		lo[0]=std::min(lo[0],x); hi[0]=std::max(hi[0],x);
+		lo[1]=std::min(lo[1],y); hi[1]=std::max(hi[1],y);
+		lo[2]=std::min(lo[2],z); hi[2]=std::max(hi[2],z);
+	};
+	for (const auto &n : nodes) grow(n.x, n.y, n.z);
+	for (const auto &p : path)  grow(p.x, p.y, p.z);
+	grow(s.x, s.y, s.z); grow(g.x, g.y, g.z);
+	const int pad = 3;
+	for (int i = 0; i < 3; i++) { lo[i] = std::max(0, lo[i]-pad); }
+	hi[0]=std::min(W-1,hi[0]+pad); hi[1]=std::min(H-1,hi[1]+pad); hi[2]=std::min(D-1,hi[2]+pad);
+
+	std::vector<voxState> obs;
+	const size_t cap = 45000;
+	// two-pass: count, then stride to stay under cap
+	size_t total = 0;
+	for (int x=lo[0]; x<=hi[0]; x++) for (int y=lo[1]; y<=hi[1]; y++) for (int z=lo[2]; z<=hi[2]; z++)
+		if (env.IsBlocked(x,y,z)) total++;
+	int stride = (total > cap) ? (int)(total / cap) + 1 : 1;
+	size_t seen = 0;
+	for (int x=lo[0]; x<=hi[0]; x++) for (int y=lo[1]; y<=hi[1]; y++) for (int z=lo[2]; z<=hi[2]; z++)
+		if (env.IsBlocked(x,y,z)) { if (seen++ % stride == 0) obs.push_back({(uint16_t)x,(uint16_t)y,(uint16_t)z}); }
+	fprintf(stderr, "obstacles in bbox [%d-%d,%d-%d,%d-%d]: %zu total, %zu emitted (stride %d)\n",
+			lo[0],hi[0],lo[1],hi[1],lo[2],hi[2], total, obs.size(), stride);
+	return obs;
 }
 
 int main(int argc, char *argv[])
@@ -121,7 +160,8 @@ int main(int argc, char *argv[])
 
 	// order by expansion key so the animation plays back in expansion order
 	std::stable_sort(nodes.begin(), nodes.end(), [](const Node &a, const Node &b){ return a.key < b.key; });
-	emit(env, W, H, D, s, g, alg, diag, cost, nodes, path);
+	auto obstacles = collectObstacles(env, W, H, D, nodes, path, s, g);
+	emit(env, W, H, D, s, g, alg, diag, cost, nodes, path, obstacles);
 	fprintf(stderr, "traced %s inst %d: %zu expansions, cost %.4f (opt %.4f)\n",
 			alg.c_str(), inst, nodes.size(), cost, opt);
 	return 0;
