@@ -21,7 +21,7 @@ workspace/results/
 # === Cluster run artifacts (generated) ===
 workspace/bin/
 workspace/cluster/logs/
-workspace/cluster/manifest.tsv
+workspace/cluster/manifest*.tsv
 
 # === Papers: PDFs can be large; uncomment to keep them out of git ===
 # resources/papers/*.pdf

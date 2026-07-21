@@ -20,8 +20,11 @@ mkdir -p "$WS/bin"
 "$WS/src/build.sh" "$WS/bin"
 
 echo "== Generating manifest =="
+# Unique per-submission manifest so a second submission can't clobber the manifest
+# that another job's still-pending array tasks read at run time.
+export MANIFEST="$CLUSTER_DIR/manifest.$$.tsv"
 "$CLUSTER_DIR/make_manifest.sh" "$@"
-N=$(wc -l < "$CLUSTER_DIR/manifest.tsv" | tr -d ' ')
+N=$(wc -l < "$MANIFEST" | tr -d ' ')
 if [ "$N" -eq 0 ]; then echo "Empty manifest — nothing to submit." >&2; exit 1; fi
 
 CONC="${CONC:-20}"

@@ -23,7 +23,7 @@ MEMMB="${MEMMB:-9000}"
 ALGS="${ALGS:-astar,rastar,mm,bia,bae,nbs,gbfs}"
 LIMIT="${LIMIT:-1000000}"
 
-MANIFEST="$ROOT/cluster/manifest.tsv"
+MANIFEST="${MANIFEST:-$ROOT/cluster/manifest.tsv}"
 BIN="$ROOT/bin"
 line=$(sed -n "${SLURM_ARRAY_TASK_ID}p" "$MANIFEST")
 IFS=$'\t' read -r family mapf scen cfg <<< "$line"

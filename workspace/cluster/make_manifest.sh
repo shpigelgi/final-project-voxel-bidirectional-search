@@ -11,7 +11,9 @@ set -euo pipefail
 CLUSTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS="$(dirname "$CLUSTER_DIR")"
 VOX="$WS/benchmarks/voxel-maps"
-OUT="$CLUSTER_DIR/manifest.tsv"
+# Per-submission manifest (set by submit.sh) so concurrent submissions of different
+# families don't clobber each other — array tasks read their manifest at RUN time.
+OUT="${MANIFEST:-$CLUSTER_DIR/manifest.tsv}"
 
 if [ ! -d "$VOX" ]; then echo "No benchmarks at $VOX — run scripts/fetch-benchmarks.sh first." >&2; exit 1; fi
 
