@@ -1,0 +1,15 @@
+family,config,alg,n,pct_ok,pct_subopt,pct_timeout,pct_fail,mean_expanded,mean_exp_over_mvc,median_exp_over_mvc,mean_time_ms
+industrial-plants,diag,astar,369,100.0,0.0,0.0,0.0,6801.9,7.83,1.01,15.392
+industrial-plants,diag,bae,365,100.0,0.0,0.0,0.0,77033.5,29.44,4.25,383.868
+industrial-plants,diag,bia,365,100.0,0.0,0.0,0.0,12620.4,14.34,2.01,36.168
+industrial-plants,diag,gbfs,365,0.0,100.0,0.0,0.0,,,,
+industrial-plants,diag,mm,365,92.3,0.0,7.7,0.0,126293.5,67.63,5.9,6295.123
+industrial-plants,diag,nbs,365,100.0,0.0,0.0,0.0,72499.0,120.38,2.5,299.658
+industrial-plants,diag,rastar,369,100.0,0.0,0.0,0.0,232208.5,209.69,6.23,811.207
+industrial-plants,nodiag,astar,1000,100.0,0.0,0.0,0.0,32236.0,1.53,1.02,40.386
+industrial-plants,nodiag,bae,1000,100.0,0.0,0.0,0.0,102432.0,7.07,3.5,203.813
+industrial-plants,nodiag,bia,1000,100.0,0.0,0.0,0.0,46398.6,2.67,2.03,82.494
+industrial-plants,nodiag,gbfs,1000,0.0,100.0,0.0,0.0,,,,
+industrial-plants,nodiag,mm,1000,100.0,0.0,0.0,0.0,414378.0,21.57,3.63,644.29
+industrial-plants,nodiag,nbs,1000,100.0,0.0,0.0,0.0,1066018.1,17.94,3.1,1809.175
+industrial-plants,nodiag,rastar,1000,100.0,0.0,0.0,0.0,152270.3,31.63,2.82,198.449
