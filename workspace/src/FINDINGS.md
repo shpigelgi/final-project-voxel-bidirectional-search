@@ -89,12 +89,16 @@ Costs verified against the scenario's optimal column:
 
 Two real findings from the spike:
 
-1. **BAE\* returns slightly suboptimal paths on irrational (√2/√3) edge costs.** On the
-   same instances where A\*/MM/NBS hit the exact optimum, BAE\* overshot by up to ~0.64
-   (≈ one diagonal step). Almost certainly HOG2's integer-`epsilon` / cost-rounding
-   assumption in the `b`-bound (cf. the `int epsilon` template in `MM.h`). **Needs
-   investigation before trusting BAE\* costs** — likely a template/epsilon fix or a
-   tolerance in its termination. A\*, MM, NBS are exactly optimal.
+1. **BAE\* was returning slightly suboptimal paths on irrational (√2/√3) edge costs —
+   now RESOLVED.** Root cause: `getLowerBound()` (BAE.h:179) rounds the `b`-bound *up* to
+   the next multiple of `gcd`, and the constructor defaults `gcd = 1.0`. That round-up is
+   only valid when every solution cost is a multiple of `gcd`; voxel costs `{1,√2,√3}`
+   share no common divisor, so the bound was inflated to the next integer and the
+   termination test `currentCost <= getLowerBound()` fired early. Fix (driver-side, no
+   HOG2 edit): construct `BAE(true, /*epsilon*/1.0, /*gcd*/1e-6)` so the rounding is
+   negligible. After the fix BAE\* matches the optimal cost on all instances (verified on
+   the four that previously failed) and expands slightly more (it now does the full work
+   to prove optimality). A\*, MM, NBS were exactly optimal throughout.
 2. **Forward A\* expands the fewest nodes; bidirectional algorithms expand more**, and
    reverse A\* is much worse than forward. This matches the literature (Siag & Shperberg:
    on grid/map-like domains with strong consistent heuristics, unidirectional search is
@@ -108,7 +112,7 @@ queue (keyed on `pair<double,double>`) is expensive; worth profiling if MM stays
 
 ## 5. Remaining work (in priority order)
 
-1. **Investigate BAE\* suboptimality** (epsilon/rounding) — blocks trusting its results.
+1. ~~Investigate BAE\* suboptimality~~ — **done** (gcd rounding; see §4.1).
 2. **Zip handling** — either unzip in the fetch step (current) or read `.3dmap.zip` directly.
 3. **MVC / must-expand floor** per instance for the expansion-ratio analysis (the papers' yardstick).
 4. **Scale**: `std::vector<bool>` is fine to ~1.3 B voxels (~160 MB); add per-instance

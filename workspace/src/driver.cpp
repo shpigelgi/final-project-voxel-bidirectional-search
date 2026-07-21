@@ -92,7 +92,10 @@ int main(int argc, char *argv[])
 	// --- algorithm objects ---
 	TemplateAStar<voxState, voxAction, VoxelMap> astar;
 	MM<voxState, voxAction, VoxelMap> mm;
-	BAE<voxState, voxAction, VoxelMap> bae;
+	// BAE(alternating, epsilon=min-edge-cost, gcd). Voxel edge costs {1,sqrt2,sqrt3}
+	// share no common divisor, so the gcd round-up in getLowerBound() is invalid and
+	// causes premature (suboptimal) termination. A negligible gcd disables that rounding.
+	BAE<voxState, voxAction, VoxelMap> bae(true, 1.0, 1e-6);
 	NBS<voxState, voxAction, VoxelMap> nbs;
 	BidirectionalGreedyBestFirst<voxState, voxAction, VoxelMap> gbfs;
 	std::vector<voxState> path, bpath;
