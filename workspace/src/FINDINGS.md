@@ -82,12 +82,16 @@ driver, which we don't use. So a headless build needs only two `.cpp` files
 - **`build.sh`** — one-command headless build (`./build.sh <outdir>` → `voxdriver`, `mvc`, `trace`).
 
 ### Interactive visualizer (`deliverables/search-visualizer.html`)
-A self-contained 3D replay of the search: drag to rotate, scrub/play the expansions in
-priority order, forward vs backward frontiers in cyan/amber, the optimal path in gold.
-Switch between A\*, MM, BiA\*, BAE\* to compare (e.g. watch MM meet in the middle vs A\*'s
-single frontier). Regenerate its data with:
-`bin/trace <map> <scen> --instance K --alg {astar|mm|bia|bae} > trace.json`
-then embed the traces (the committed page bakes in plant01, instance 10).
+A self-contained, responsive 3D replay of the search: drag to rotate, scrub/play the
+expansions in priority order, forward vs backward frontiers in cyan/amber, depth-shaded
+obstacle walls, the optimal path in gold appearing when the frontiers meet (meeting node
+ringed). A **scene picker** switches maps and an algorithm tab-bar switches A\*/MM/BiA\*/BAE\*.
+Baked-in scenes: plant01, plant02, and Sandstone BSG (a different, porous domain).
+`trace.cpp` options: `--max-nodes N` stride-downsamples the animation (used for the huge
+sandstone search; the page scales the live counters back up to true expansions via
+`expanded/shown`), `--max-obs M` caps rendered walls. Regenerate a scene with:
+`bin/trace <map> <scen> --instance K --alg {astar|mm|bia|bae} [--max-nodes N] [--max-obs M]`
+then re-embed (see the multi-scene JSON structure `{scenes:{id:{label,obstacles,algs}}}`).
 
 Run: `./voxdriver <map.3dmap> <scen.3dscen> [--limit N] [--no-diagonals] [--algs ...]`
 (unzip the `.3dmap.zip` first, or add zip handling — currently done in the fetch step).

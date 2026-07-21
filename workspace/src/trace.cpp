@@ -24,6 +24,8 @@
 #include "BAE.h"
 
 struct Node { int x, y, z; double g, key; int side; }; // side 0=forward,1=backward
+static size_t gMaxNodes = 0;      // 0 = emit all expansions; else stride-downsample to this many
+static size_t gMaxObs   = 45000;  // cap on emitted obstacle voxels
 
 static void emit(const VoxelMap &env, int W, int H, int D,
 				 const voxState &s, const voxState &g, const std::string &alg, bool diag,
@@ -35,11 +37,17 @@ static void emit(const VoxelMap &env, int W, int H, int D,
 	printf("  \"dims\": [%d,%d,%d],\n", W, H, D);
 	printf("  \"start\": [%d,%d,%d], \"goal\": [%d,%d,%d],\n", s.x, s.y, s.z, g.x, g.y, g.z);
 	printf("  \"cost\": %.6f, \"expanded\": %zu,\n", cost, nodes.size());
-	// nodes: [x,y,z,side,key]
+	// nodes: [x,y,z,side,key]. Optionally downsampled for display (stride over the
+	// key-sorted order so the animation stays smooth and the file small).
+	size_t maxN = gMaxNodes ? gMaxNodes : nodes.size();
+	size_t stride = (nodes.size() > maxN) ? (nodes.size() / maxN) + 1 : 1;
 	printf("  \"nodes\": [");
-	for (size_t i = 0; i < nodes.size(); i++)
-		printf("%s[%d,%d,%d,%d,%.4f]", i ? "," : "", nodes[i].x, nodes[i].y, nodes[i].z,
+	bool first = true;
+	for (size_t i = 0; i < nodes.size(); i += stride) {
+		printf("%s[%d,%d,%d,%d,%.4f]", first ? "" : ",", nodes[i].x, nodes[i].y, nodes[i].z,
 			   nodes[i].side, nodes[i].key);
+		first = false;
+	}
 	printf("],\n");
 	printf("  \"obstacles\": [");
 	for (size_t i = 0; i < obstacles.size(); i++)
@@ -71,7 +79,7 @@ static std::vector<voxState> collectObstacles(const VoxelMap &env, int W, int H,
 	hi[0]=std::min(W-1,hi[0]+pad); hi[1]=std::min(H-1,hi[1]+pad); hi[2]=std::min(D-1,hi[2]+pad);
 
 	std::vector<voxState> obs;
-	const size_t cap = 45000;
+	const size_t cap = gMaxObs;
 	// two-pass: count, then stride to stay under cap
 	size_t total = 0;
 	for (int x=lo[0]; x<=hi[0]; x++) for (int y=lo[1]; y<=hi[1]; y++) for (int z=lo[2]; z<=hi[2]; z++)
@@ -93,6 +101,8 @@ int main(int argc, char *argv[])
 	for (int i = 3; i < argc; i++) {
 		if      (!strcmp(argv[i], "--instance") && i+1 < argc) inst = atoi(argv[++i]);
 		else if (!strcmp(argv[i], "--alg")      && i+1 < argc) alg = argv[++i];
+		else if (!strcmp(argv[i], "--max-nodes")&& i+1 < argc) gMaxNodes = (size_t)atol(argv[++i]);
+		else if (!strcmp(argv[i], "--max-obs")  && i+1 < argc) gMaxObs   = (size_t)atol(argv[++i]);
 		else if (!strcmp(argv[i], "--no-diagonals"))           diag = false;
 	}
 
