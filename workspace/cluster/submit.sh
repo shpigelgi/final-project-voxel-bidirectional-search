@@ -32,10 +32,15 @@ extra=(--partition="$PARTITION")
 [ -n "${ACCOUNT:-}" ]   && extra+=(--account="$ACCOUNT")
 
 echo "== Submitting array 1-$N%$CONC =="
-sbatch --array="1-${N}%${CONC}" \
-       --export=ALL,ROOT="$WS",TIMEOUT="${TIMEOUT:-60}",MEMMB="${MEMMB:-9000}",ALGS="${ALGS:-astar,rastar,mm,bia,bae,nbs,gbfs}",LIMIT="${LIMIT:-1000000}" \
-       "${extra[@]}" \
-       "$CLUSTER_DIR/run_array.sbatch"
+# Export the config into this shell and pass --export=ALL. Do NOT inline these into
+# --export=ALL,VAR=... : --export is itself comma-delimited, so a comma-containing value
+# like ALGS=astar,rastar,... would be split and only the first algorithm would survive.
+export ROOT="$WS"
+export TIMEOUT="${TIMEOUT:-60}"
+export MEMMB="${MEMMB:-9000}"
+export ALGS="${ALGS:-astar,rastar,mm,bia,bae,nbs,gbfs}"
+export LIMIT="${LIMIT:-1000000}"
+sbatch --array="1-${N}%${CONC}" --export=ALL "${extra[@]}" "$CLUSTER_DIR/run_array.sbatch"
 
 echo "Submitted. Watch with:  squeue -u \$USER   |   logs in cluster/logs/"
 echo "When finished, aggregate with:  cluster/aggregate.py $WS/results"
