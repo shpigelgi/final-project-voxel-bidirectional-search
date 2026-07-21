@@ -27,3 +27,6 @@ echo "Built: $OUTDIR/mvc"
 
 g++ -std=c++17 -O2 -o "$OUTDIR/trace" "$HERE/trace.cpp" "${DEPS[@]}" "${INCS[@]}"
 echo "Built: $OUTDIR/trace"
+
+g++ -std=c++17 -O2 -o "$OUTDIR/validate" "$HERE/validate.cpp" "${DEPS[@]}" "${INCS[@]}"
+echo "Built: $OUTDIR/validate"

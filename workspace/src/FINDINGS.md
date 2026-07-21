@@ -79,7 +79,13 @@ driver, which we don't use. So a headless build needs only two `.cpp` files
 - **`trace.cpp`** — emits a JSON trace of one search (map, instance, algorithm): every
   expanded node tagged forward/backward + its priority key, plus the final path. Feeds the
   interactive visualizer. Supports `astar`, `mm`, `bia`, `bae`.
-- **`build.sh`** — one-command headless build (`./build.sh <outdir>` → `voxdriver`, `mvc`, `trace`).
+- **`validate.cpp`** — independent legality auditor. Re-implements the move rule from
+  scratch (does NOT call `CanMove`) and verifies (a) the successor generator and (b) every
+  returned path take only legal steps: neighbor-only, endpoints free, no corner-cutting.
+  Result: 0 illegal across all maps/modes/algorithms (~1.8M successors, ~58k path edges).
+  Only benign `dup-node` self-loops appear (the meeting voxel duplicated at the join on
+  trivial instances). Run: `bin/validate <map> <scen> [--limit N] [--no-diagonals]`.
+- **`build.sh`** — one-command headless build (`./build.sh <outdir>` → `voxdriver`, `mvc`, `trace`, `validate`).
 
 ### Interactive visualizer (`deliverables/search-visualizer.html`)
 A self-contained, responsive 3D replay of the search: drag to rotate, scrub/play the
