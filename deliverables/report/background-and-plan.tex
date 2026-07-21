@@ -1,0 +1,506 @@
+\documentclass[11pt]{article}
+
+% ---------- packages ----------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\usepackage{longtable}
+\usepackage[round]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\newtcolorbox{keybox}[1]{colback=blue!4,colframe=blue!45!black,
+  fonttitle=\bfseries,title=#1,boxrule=0.6pt,left=4pt,right=4pt,top=3pt,bottom=3pt}
+
+% ---------- notation shortcuts ----------
+\newcommand{\gF}{g_F}
+\newcommand{\gB}{g_B}
+\newcommand{\hF}{h_F}
+\newcommand{\hB}{h_B}
+\newcommand{\fF}{f_F}
+\newcommand{\fB}{f_B}
+\newcommand{\Cstar}{C^{*}}
+\newcommand{\GMX}{G_{\mathrm{MX}}}
+\newcommand{\lb}{\mathit{lb}}
+
+\title{\vspace{-1.5em}Bidirectional Heuristic Search on Voxel Maps\\[0.3em]
+\large Background from the Literature and a Project Plan}
+\author{Search Methods in Artificial Intelligence --- Ben-Gurion University\\
+Advisor: Lior Siag}
+\date{\today}
+
+\begin{document}
+\maketitle
+\vspace{-1em}
+
+\begin{abstract}
+\noindent This document distills the six theory papers and one domain paper assigned by
+Lior Siag into exactly what is needed to start the project: run bidirectional heuristic
+search algorithms (A$^{*}$, MM, BAE$^{*}$, BiA$^{*}$, GBFS, plus unidirectional variants)
+on the Warthog 3D voxel-map benchmarks inside the HOG2 framework, and measure how close
+each algorithm comes to the theoretical minimum number of node expansions. It is organized
+so the theory builds up in the order Lior recommended --- the ``must-expand'' foundation
+first, then the lower-bound machinery, then the concrete algorithms --- and closes with the
+voxel domain details that drive the loader, the experimental methodology, and a recommended
+two-person workflow.
+\end{abstract}
+
+\tableofcontents
+
+% =====================================================================
+\section{Project in one page}
+\label{sec:overview}
+
+We are searching for a least-cost path of cost $\Cstar$ between a \texttt{start} and a
+\texttt{goal} state. \emph{Bidirectional heuristic search} (BiHS) runs two searches at
+once: a \textbf{forward} search from \texttt{start} and a \textbf{backward} search from
+\texttt{goal} (using reversed moves). The promise is that two searches, each travelling
+``half the distance,'' can expand far fewer nodes than a single unidirectional
+$A^{*}$~\citep{holte2017mm}.
+
+The concrete goal (per Lior's brief) is to \textbf{connect the Warthog voxel-map benchmark
+to the bidirectional-search code in HOG2}, then run every required algorithm from both
+directions and analyze the results. HOG2 already contains the algorithms
+(\texttt{MM.h}, \texttt{BAE.h}, \texttt{TemplateAStar.h}, \texttt{NBS.h},
+\texttt{BidirectionalGreedyBestFirst.h}) and a voxel domain (\texttt{Voxels.\{h,cpp\}}),
+so the real work is (a) a loader from the Warthog voxel format into HOG2's domain, and
+(b) an experiment driver that runs all algorithms both ways and records metrics.
+
+Everything in the assigned papers answers two questions:
+\begin{enumerate}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Theory:} which nodes must \emph{any} correct algorithm expand? This gives a
+        provable lower bound --- the yardstick we compare against
+        (\S\ref{sec:mustexpand}--\S\ref{sec:bounds}).
+  \item \textbf{Algorithms:} how do MM, BAE$^{*}$, A$^{*}$, BiA$^{*}$ and GBFS try to reach
+        that minimum, and when does each win? (\S\ref{sec:algorithms}).
+\end{enumerate}
+
+% =====================================================================
+\section{Background and notation}
+\label{sec:notation}
+
+Learn this notation first --- it appears in every paper.
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item $\gF(n)$: cost of the best known path \texttt{start}$\to n$ (forward).
+        $\gB(n)$: cost of the best known path $n\to$\texttt{goal} (backward).
+  \item $\hF(n)$: heuristic estimate of $n\to$\texttt{goal}.
+        $\hB(n)$: estimate of \texttt{start}$\to n$.
+  \item $\fF(n)=\gF(n)+\hF(n)$ and $\fB(n)=\gB(n)+\hB(n)$, exactly as in $A^{*}$.
+  \item $\Cstar$: optimal solution cost. $U$: cost of the best (incumbent) solution found so
+        far. $\varepsilon$: the cheapest edge cost in the graph.
+\end{itemize}
+
+\begin{keybox}{Front-to-end vs.\ front-to-front (know the difference)}
+All algorithms in this project are \textbf{front-to-end}: each side's heuristic points at
+the \emph{fixed opposite endpoint} ($\hF$ aims at \texttt{goal}, $\hB$ aims at
+\texttt{start}). This contrasts with \textbf{front-to-front} heuristics that estimate the
+distance between two \emph{arbitrary} frontier nodes --- more informative but rarely
+practical~\citep{eckerle2017sufficient}. The whole must-expand theory below is stated for
+the front-to-end setting.
+\end{keybox}
+
+\paragraph{Admissible vs.\ consistent.}
+A heuristic is \emph{admissible} if it never overestimates ($\hF(n)\le d(n,\texttt{goal})$).
+It is \emph{consistent} if it additionally satisfies the triangle inequality
+$\hF(n)\le d(n,n')+\hF(n')$. \textbf{Our voxel heuristics (3D-octile / Euclidean distance)
+are consistent}, not merely admissible --- and consistency unlocks tighter lower bounds
+(\S\ref{sec:consistency}), so it is the regime we actually live in.
+
+% =====================================================================
+\section{The must-expand theory: which nodes are unavoidable}
+\label{sec:mustexpand}
+
+This is the intellectual spine, developed across
+\citet{eckerle2017sufficient}, \citet{chen2017nbs}, and the two Shaham
+papers~\citep{shaham2017minimal,shaham2018consistent}. Understand it and the rest follows.
+
+\subsection{The must-expand \emph{pair} \citep{eckerle2017sufficient}}
+In unidirectional $A^{*}$ the obligation is on \emph{single nodes}: $A^{*}$ must expand
+every node with $f<\Cstar$~\citep{dechter1985generalized}. Bidirectional search is
+different --- the obligation is on \textbf{pairs} $(u,v)$, where $u$ is a forward-frontier
+node and $v$ a backward-frontier node.
+
+Define the lower bound on the cost of any path forced through \emph{both} $u$ and $v$:
+\begin{equation}
+  \lb(u,v)=\max\bigl\{\,\fF(u),\ \fB(v),\ \gF(u)+\gB(v)\,\bigr\}.
+  \label{eq:lb}
+\end{equation}
+The three terms are three independent reasons such a path must cost at least this much:
+$\fF(u)$ is the forward estimate of a solution through $u$; $\fB(v)$ is the backward
+estimate through $v$; and $\gF(u)+\gB(v)$ is the \emph{meeting term} --- the guaranteed cost
+of reaching $u$ from the start plus reaching the goal from $v$, \emph{even if the connecting
+piece were free}. The meeting term is the uniquely bidirectional ingredient.
+
+\begin{keybox}{The rule}
+$(u,v)$ is a \textbf{must-expand pair} iff $\lb(u,v)<\Cstar$. The obligation is discharged
+by expanding \emph{either} $u$ forward \emph{or} $v$ backward --- not necessarily both.
+\end{keybox}
+
+\emph{Why (intuition).} An expansion-based, black-box algorithm cannot ``see'' edges it has
+not generated. If it skips both $u$ and $v$, an adversary can insert one cheap edge $u\to v$
+that creates a solution cheaper than $\Cstar$; the algorithm never notices and returns a
+sub-optimal answer. So to be \emph{guaranteed} optimal it must touch at least one side of
+every must-expand pair. \citet{eckerle2017sufficient} also show this generalizes the classic
+$A^{*}$ result~\citep{dechter1985generalized}, which is the special case $\hB=0$.
+
+\subsection{The must-expand graph and minimum vertex cover \citep{chen2017nbs}}
+Turn this into a bipartite graph $\GMX$: forward nodes on the left, backward nodes on the
+right, an edge between $u$ and $v$ iff $(u,v)$ is a must-expand pair. Because expanding a
+node ``covers'' every edge touching it, and every must-expand edge must be covered:
+\begin{keybox}{The theoretical floor}
+The minimum number of expansions any BiHS algorithm can achieve equals the
+\textbf{Minimum Vertex Cover (MVC) of $\GMX$}. Since $\GMX$ is bipartite, the MVC is
+computable in polynomial time (K\H{o}nig's theorem / max-flow), so this floor is
+\emph{measurable per instance} --- it is the denominator we report every algorithm against.
+\end{keybox}
+\citet{chen2017nbs} also introduced \textbf{NBS} (Near-optimal Bidirectional Search), which
+provably expands at most $2\times$MVC and is worst-case optimal --- our natural
+near-optimal baseline.
+
+\subsection{Hitting the floor: fractional MM \citep{shaham2017minimal}}
+\citet{shaham2017minimal} show the MVC need not be built explicitly: cluster nodes by
+$g$-value, and the optimal cover is always a clean split --- all lowest-$g$ forward nodes up
+to a cutoff, plus all lowest-$g$ backward nodes up to a dual cutoff --- computable in time
+linear in the number of distinct $g$-values. They introduce \textbf{fMM($p$)}
+(``fractional MM''), which meets at fraction $p$ of the path: $p{=}1$ is forward $A^{*}$,
+$p{=}0$ is reverse $A^{*}$, $p{=}\tfrac12$ is MM. There is an optimal $p^{*}$ for which
+fMM($p^{*}$) expands \emph{exactly} the MVC --- but $p^{*}$ depends on $\Cstar$ and the
+instance, so it is only knowable \emph{after} solving. This is the permanent gap between the
+theoretical optimum and any real algorithm.
+
+\begin{keybox}{Experimental consequence}
+The best meeting point is domain-dependent and \emph{usually not the middle}. Do not assume
+MM's $\Cstar/2$ split is optimal on voxel maps --- measure the distribution of $p^{*}$.
+\end{keybox}
+
+\subsection{What consistency buys \citep{shaham2018consistent}}
+\label{sec:consistency}
+Because our heuristics are \emph{consistent}, the heuristic difference itself becomes a free
+front-to-front lower bound on the ``gap'' $d(u,v)$ between the forward node $u$ and the
+backward node $v$. Define
+\begin{equation}
+  h_C(u,v)=\max\bigl\{\,\hF(u)-\hF(v),\ \hB(v)-\hB(u),\ \varepsilon\,\bigr\},
+  \label{eq:hc}
+\end{equation}
+and the must-expand condition tightens to $\gF(u)+\gB(v)+h_C(u,v)<\Cstar$. The two heuristic
+terms are directional mirror images that each lower-bound the \emph{same} forward gap
+$d(u,v)$: consistency of $\hF$ gives $\hF(u)-\hF(v)\le d(u,v)$, and consistency of $\hB$
+along the same $u\to v$ segment gives $\hB(v)-\hB(u)\le d(u,v)$. (On an \emph{undirected}
+graph such as a voxel map, where $d(u,v)=d(v,u)$, both signs hold and the terms may be
+replaced by absolute values $|\hF(u)-\hF(v)|$, $|\hB(u)-\hB(v)|$ --- the ``$\mathit{lb}_{CU}$''
+variant; on directed graphs only the signed form is admissible.) The extra non-negative term
+makes the inequality fail more often, so \emph{fewer pairs are must-expand}
+$\Rightarrow$ sparser $\GMX$ $\Rightarrow$ smaller floor. In plain terms, consistency lets
+you \emph{prove} more pairs are safe to skip, which is precisely what consistency-exploiting
+algorithms (BAE$^{*}$) capitalize on. \citet{shaham2018consistent}
+prove a matching optimal algorithm exists (per heuristic-equivalence class), confirming the
+lower bound is tight.
+
+% =====================================================================
+\section{Unifying the lower bounds \citep{siag2025bridging}}
+\label{sec:bounds}
+
+\citet{siag2025bridging} --- Lior's own capstone paper, and the recommended starting read
+--- proves that all the practical ``lower bound'' formulas invented over the years are just
+different subsets of the single $\max\{\cdot\}$ expression in Eq.~\eqref{eq:lb}, and that
+infinitely many valid bounds can be generated from it. Two derived per-node quantities are
+central:
+\begin{align}
+  d_D(n) &= g_D(n)-h_{\bar D}(n) && \text{(\emph{heuristic error}: how much the opposite
+                                     heuristic underestimated),}\\
+  b_D(n) &= f_D(n)+d_D(n)        && \text{(the \emph{$b$-value}, BAE$^{*}$'s priority).}
+\end{align}
+where $D$ is a direction and $\bar D$ its opposite. From these come the family of global
+bounds, all valid lower bounds on $\Cstar$; the most useful in practice are:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item the \textbf{g-bound} $g\mathrm{Min}_F+g\mathrm{Min}_B+\varepsilon$;
+  \item the \textbf{Kaindl--Kainz bounds}~\citep{kaindl1997reconsidered}
+        $f\mathrm{Min}_F+d\mathrm{Min}_B$ and $f\mathrm{Min}_B+d\mathrm{Min}_F$;
+  \item the \textbf{$b$-bound} $\tfrac12\bigl(b\mathrm{Min}_F+b\mathrm{Min}_B\bigr)$,
+        the one BAE$^{*}$ pushes.
+\end{itemize}
+No single bound dominates the others, but the empirical headline is decisive for us:
+
+\begin{keybox}{Practical guidance from Siag \& Shperberg (2025)}
+\begin{enumerate}[leftmargin=1.3em,itemsep=1pt]
+  \item \textbf{Default to BAE$^{*}$} under consistent heuristics --- best balance of node
+        expansions and runtime.
+  \item Existing algorithms already come within $\sim$5--15\% of the MVC floor, so there is
+        little room left to reduce expansions by inventing new bounds.
+  \item \textbf{On grid/map-like domains the consistency benefit is small}, and reverse
+        $A^{*}$ sometimes beats everything because of directional asymmetry. Whether the
+        fancy bidirectional algorithm wins on voxel maps is an \emph{empirical} question ---
+        which is exactly what this project answers.
+\end{enumerate}
+\end{keybox}
+
+% =====================================================================
+\section{The algorithms we will run}
+\label{sec:algorithms}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{@{}p{2.1cm}p{2.2cm}p{5.4cm}p{1.4cm}@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Type} & \textbf{Priority / key idea} & \textbf{Optimal?}\\
+\midrule
+$A^{*}$ (+ reverse) & unidirectional & expand min $f=g+h$ & yes\\
+MM & bidirectional & expand min $\mathit{pr}=\max(f,2g)$ (meet in the middle) & yes\\
+BiA$^{*}$ & bidirectional & bidirectional $A^{*}$, min $f$ each side; frontiers not capped & yes\\
+BAE$^{*}$ & bidirectional & expand min $b=f+d$, $d=g-h_{\text{opp}}$; exploits heuristic error & yes\\
+GBFS & greedy & expand min $h$ & \textbf{no}\\
+NBS & bidirectional & near-optimal; $\le 2\times$MVC (baseline) & yes\\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{MM --- guaranteed to meet in the middle \citep{holte2017mm}}
+The whole trick is the priority function
+\begin{equation}
+  \mathit{pr}_F(n)=\max\bigl(\fF(n),\ 2\,\gF(n)\bigr)
+  \qquad(\text{backward symmetric}).
+  \label{eq:mm}
+\end{equation}
+A node is expanded only when its priority $\le\Cstar$, so the $2g$ term forces
+$\gF(n)\le\Cstar/2$: \emph{neither frontier ever ventures past the halfway distance from its
+own root}. (This is about how far each search reaches, not physically where they meet.)
+Implementation essentials:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item two full search states (Open/Closed/$g$ per direction); backward uses reversed moves;
+  \item each step expands whichever direction owns the global minimum priority
+        $C=\min(\mathit{pr}\text{min}_F,\mathit{pr}\text{min}_B)$;
+  \item \textbf{solution detection}: when a generated node already sits on the opposite Open
+        list, a full path exists --- update $U\leftarrow\min(U,\gF(n)+\gB(n))$;
+  \item \textbf{termination}: stop when
+        $U\le\max\!\bigl(C,\ f\mathrm{min}_F,\ f\mathrm{min}_B,\
+        g\mathrm{min}_F+g\mathrm{min}_B+\varepsilon\bigr)$;
+        \emph{not} at first frontier contact (that yields sub-optimal answers);
+  \item \textbf{MM0} ($h{=}0$, expand min $2g$) is the bidirectional brute-force baseline,
+        analogous to Dijkstra.
+\end{itemize}
+MM wins with moderate-strength heuristics; a very strong heuristic favors $A^{*}$, a very
+weak one favors MM0.
+
+\subsection{BAE$^{*}$ --- bidirectional $A^{*}$ with error \citep{alcazar2020unifying,siag2025bridging}}
+BAE$^{*}$ is a bidirectional best-first search whose priority is the $b$-value
+$b_D(n)=f_D(n)+d_D(n)=f_D(n)+\bigl(g_D(n)-h_{\bar D}(n)\bigr)$, terminating on the $b$-bound.
+Intuitively it ``charges the heuristic's looseness back into'' a node's priority, delaying
+loose nodes. Under consistency $b$ stays monotone, so BAE$^{*}$ is optimal. The
+implementation delta from BiA$^{*}$ is small (swap the priority, use the $b$-bound to stop),
+and it is Lior's recommended default. \citet{alcazar2020unifying} showed it can expand up to
+an order of magnitude fewer ``necessarily expanded'' nodes than near-optimal algorithms such
+as NBS on some domains, because exploiting heuristic inaccuracy turns many would-be
+must-expand nodes into delayable ones.
+
+\subsection{GBFS --- greedy best-first}
+GBFS expands by lowest $h$ only and is \textbf{not cost-optimal}; none of the
+must-expand/MVC theory applies to it. Report it on a separate axis (fast, but its path cost
+and expansions are not comparable against the MVC floor).
+
+% =====================================================================
+\section{The voxel domain \citep{nobes2023voxel}}
+\label{sec:voxel}
+
+This is the practical layer the loader must match.
+
+\paragraph{What a voxel map is.} A 3D integer lattice $\text{width}\times\text{height}\times
+\text{depth}$; each voxel is filled (obstacle) or free, with up to 26 neighbours (the 3D
+analogue of the 8-neighbour 2D grid). The benchmark ships three families: \textbf{Sandstone}
+(dense porous rock, all $400^3$, ${\sim}80\%$ filled), \textbf{Descent} (1995 game levels,
+rooms + corridors, up to ${\sim}1.3$ billion voxels), and \textbf{Industrial Plants}
+(pipe-routing layouts, sparse). In total: 46 maps, 92{,}000 instances.
+
+\begin{keybox}{File format --- the single most error-prone step}
+\begin{verbatim}
+voxel                    <- OR "rev_voxel"
+<width> <height> <depth>
+x0 y0 z0
+x1 y1 z1
+...
+\end{verbatim}
+\textbf{\texttt{voxel}} $\Rightarrow$ listed coordinates are the \emph{filled/obstacle}
+voxels (everything else free). \textbf{\texttt{rev\_voxel}} $\Rightarrow$ listed coordinates
+are the \emph{free} voxels (everything else blocked) --- used for dense maps like Sandstone.
+\emph{Branch on the first token, or dense maps come out completely inverted.} The domain
+paper names the fields but gives no byte-exact spec: verify indexing order, 0-\ vs
+1-based, whitespace, and scenario columns against a real downloaded file and the Warthog
+loader source before trusting a parser.
+\end{keybox}
+
+\paragraph{Movement model (match exactly for comparable costs).}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{26-connected} moves with 3D-octile costs: straight (face) $=1$,
+        edge-diagonal $=\sqrt2$, corner-diagonal $=\sqrt3$. Hence $\varepsilon=1$.
+  \item \textbf{No corner-cutting}: a diagonal move is legal only if the voxels it clips are
+        all free.
+  \item Region \emph{reachability} is computed with 6-connectivity (flood fill); keep that
+        distinct from the 26-connected \emph{move} model.
+  \item ``Without diagonals'' (per the brief) $=$ the 6 face moves at unit cost; ``with
+        diagonals'' $=$ full 26-connected. Since the domain supports diagonals, we run both.
+\end{itemize}
+
+\paragraph{Scenario files and metrics.} Each map ships $\sim$2{,}000 \texttt{start}/\texttt{goal}
+voxel triples, stored in the minimum-cost direction (which controls directional bias ---
+directly relevant when validating bidirectional symmetry), likely carrying an optimal cost.
+The currency of comparison is \textbf{node expansions}. Report two flavors used by the
+papers: expansions to \emph{prove} optimality (bound $<\Cstar$) versus total ($\le\Cstar$),
+each as a ratio to the per-instance MVC floor. Also log runtime and solution cost --- all
+optimal algorithms must return the same cost as $A^{*}$, which is our correctness check.
+
+% =====================================================================
+\section{What to expect on our maps}
+\label{sec:expect}
+
+Synthesizing the empirical findings across the papers, on grid/voxel-like domains:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item $A^{*}$ (and reverse $A^{*}$) are surprisingly competitive; strong Euclidean/octile
+        heuristics narrow the bidirectional advantage~\citep{holte2017mm,siag2025bridging}.
+  \item MM/BAE$^{*}$ pay off most with moderate heuristics; the consistency benefit is
+        modest on maps~\citep{shaham2018consistent,siag2025bridging}.
+  \item The best meeting point is rarely the exact middle; directional asymmetry matters,
+        so always run \emph{both} directions~\citep{shaham2017minimal,nobes2023voxel}.
+  \item GBFS is fast but sub-optimal --- separate axis.
+  \item Report every optimal algorithm as a ratio to the MVC floor (or to NBS's
+        $\le2\times$MVC line) rather than as raw counts.
+\end{itemize}
+
+% =====================================================================
+\section{Recommended workflow and two-person split}
+\label{sec:workflow}
+
+The work factors cleanly into an \textbf{infrastructure track} (get maps into HOG2 and run
+things) and an \textbf{algorithms/analysis track} (make all algorithms run both ways and
+turn numbers into findings). We propose \textbf{Person~A = Infrastructure} and
+\textbf{Person~B = Algorithms \& Analysis}, with shared milestones and paired reviews at
+each phase boundary.
+
+\subsection{Phased plan}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{@{}p{0.6cm}p{3.2cm}p{5.0cm}p{2.6cm}@{}}
+\toprule
+\textbf{Ph} & \textbf{Milestone} & \textbf{Deliverable / exit criterion} & \textbf{Owner}\\
+\midrule
+0 & Setup \& read & HOG2 built; benchmarks fetched; both read papers 2, 3, 1, 6 & Both\\
+1 & Format spike & One real Sandstone (\texttt{rev\_voxel}) + one Descent (\texttt{voxel}) map parsed and visualized; format documented & A (lead), B (review)\\
+2 & Loader & Warthog $\to$ HOG2 \texttt{Voxels} loader; 26-conn + no-corner-cutting + octile costs; unit tests & A\\
+3 & Baseline run & $A^{*}$ and reverse $A^{*}$ produce optimal costs matching benchmark; metrics logged (expansions, runtime, cost) & B (lead), A (loader support)\\
+4 & Algorithm sweep & MM, MM0, BiA$^{*}$, BAE$^{*}$, GBFS, NBS wired into the driver; run both directions, with and without diagonals & B\\
+5 & MVC yardstick & Per-instance MVC of $\GMX$ computed; expansion ratios produced & B (lead), A (perf/IO)\\
+6 & Scale \& robustness & Large Descent/Plant maps stream without OOM; timeouts/memory caps handled & A\\
+7 & Analysis \& report & Tables + plots per family; crossover discussion; final write-up & Both\\
+\bottomrule
+\end{longtable}
+
+\subsection{Responsibility split}
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{longtable}{@{}p{5.7cm}p{5.7cm}@{}}
+\toprule
+\textbf{Person A --- Infrastructure} & \textbf{Person B --- Algorithms \& Analysis}\\
+\midrule
+Warthog voxel loader (\texttt{voxel}/\texttt{rev\_voxel}), scenario parser & Experiment driver looping all algorithms $\times$ both directions $\times$ diagonal on/off\\
+HOG2 \texttt{Voxels} domain wiring: 26-connectivity, no-corner-cutting, octile costs & Configure/verify MM, MM0, BiA$^{*}$, BAE$^{*}$, GBFS, NBS in HOG2\\
+Bit-packed storage \& streaming for billion-voxel maps; build system & Metrics: expansions ($<\Cstar$ and $\le\Cstar$), runtime, cost, meeting point\\
+Correctness \& perf harness; timeouts, memory caps, reproducible runs & MVC-of-$\GMX$ computation as the theoretical floor; ratio reporting\\
+CI-style regression on a small map subset & Statistical analysis, plots, and the results tables\\
+\bottomrule
+\end{longtable}
+\end{center}
+
+\subsection{Ways of working}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Contract early.} Agree the loader's output data structure (the occupancy grid
+        + domain interface) in Phase~1 so A and B can work in parallel behind it. B can start
+        on a tiny hand-made map before the real loader lands.
+  \item \textbf{Correctness gate.} No algorithm result is trusted until its returned cost
+        equals $A^{*}$'s on the same instance (Phase~3 establishes the oracle).
+  \item \textbf{Reference implementation.} Mirror the SPL-BGU \texttt{BiHS-Direction-Choosing}
+        usage example and the \texttt{BiHS-Consistent-F2E} repo for how HOG2's BiHS code is
+        driven.
+  \item \textbf{Cross-review at phase boundaries.} Each phase's exit criterion is reviewed by
+        the other person; this catches the two classic bugs early --- inverted
+        \texttt{rev\_voxel} polarity, and corner-cutting sneaking in cheaper-than-optimal
+        paths.
+  \item \textbf{Scale last.} Develop on Sandstone ($400^3$) and small Descent maps; only move
+        to billion-voxel maps once the pipeline is correct and instrumented.
+\end{itemize}
+
+% =====================================================================
+\section*{Reading order (Lior's recommendation)}
+\addcontentsline{toc}{section}{Reading order}
+Start with \citet{siag2025bridging} (the unifying big picture); if clear, continue to
+\citet{eckerle2017sufficient} (the must-expand foundation). Then
+\citet{holte2017mm} (MM --- the most concrete algorithm), \citet{alcazar2020unifying}
+(BAE$^{*}$, the likely default), and \citet{shaham2017minimal,shaham2018consistent} for the
+minimal-set and consistency depth. Read \citet{nobes2023voxel} alongside the loader work.
+
+% =====================================================================
+\begin{thebibliography}{10}
+
+\bibitem[Alc\'azar et~al.(2020)]{alcazar2020unifying}
+Alc\'azar, V., Riddle, P., and Barley, M. (2020).
+\newblock A Unifying View on Individual Bounds and Heuristic Inaccuracies in
+  Bidirectional Search.
+\newblock In \emph{Proc.\ AAAI Conference on Artificial Intelligence}, pp.\ 2327--2334.
+
+\bibitem[Chen et~al.(2017)]{chen2017nbs}
+Chen, J., Holte, R.~C., Zilles, S., and Sturtevant, N.~R. (2017).
+\newblock Front-to-End Bidirectional Heuristic Search with Near-Optimal Node
+  Expansions.
+\newblock In \emph{Proc.\ IJCAI}, pp.\ 489--495.
+
+\bibitem[Dechter and Pearl(1985)]{dechter1985generalized}
+Dechter, R. and Pearl, J. (1985).
+\newblock Generalized best-first search strategies and the optimality of A$^{*}$.
+\newblock \emph{Journal of the ACM}, 32(3):505--536.
+
+\bibitem[Eckerle et~al.(2017)]{eckerle2017sufficient}
+Eckerle, J., Chen, J., Sturtevant, N.~R., Zilles, S., and Holte, R.~C. (2017).
+\newblock Sufficient Conditions for Node Expansion in Bidirectional Heuristic
+  Search.
+\newblock In \emph{Proc.\ ICAPS}.
+
+\bibitem[Holte et~al.(2017)]{holte2017mm}
+Holte, R.~C., Felner, A., Sharon, G., and Sturtevant, N.~R. (2017).
+\newblock MM: A bidirectional search algorithm that is guaranteed to meet in
+  the middle.
+\newblock \emph{Artificial Intelligence}, 252:232--266.
+
+\bibitem[Kaindl and Kainz(1997)]{kaindl1997reconsidered}
+Kaindl, H. and Kainz, G. (1997).
+\newblock Bidirectional Heuristic Search Reconsidered.
+\newblock \emph{Journal of Artificial Intelligence Research}, 7:283--317.
+
+\bibitem[Nobes et~al.(2023)]{nobes2023voxel}
+Nobes, R., Harabor, D., Wybrow, M., and Walsh, S.~D.~C. (2023).
+\newblock Voxel Benchmarks for 3D Pathfinding: Sandstone, Descent, and
+  Industrial Plants.
+\newblock In \emph{Proc.\ Symposium on Combinatorial Search (SoCS)}.
+
+\bibitem[Shaham et~al.(2017)]{shaham2017minimal}
+Shaham, E., Felner, A., Chen, J., and Sturtevant, N.~R. (2017).
+\newblock The Minimal Set of States that Must Be Expanded in a Front-to-End
+  Bidirectional Search.
+\newblock In \emph{Proc.\ Symposium on Combinatorial Search (SoCS)}.
+
+\bibitem[Shaham et~al.(2018)]{shaham2018consistent}
+Shaham, E., Felner, A., Sturtevant, N.~R., and Rosenschein, J.~S. (2018).
+\newblock Minimizing Node Expansions in Bidirectional Search with Consistent
+  Heuristics.
+\newblock In \emph{Proc.\ Symposium on Combinatorial Search (SoCS)}.
+
+\bibitem[Siag and Shperberg(2025)]{siag2025bridging}
+Siag, L. and Shperberg, S.~S. (2025).
+\newblock Bridging theory and practice in bidirectional heuristic search with
+  front-to-end consistent heuristics.
+\newblock \emph{Artificial Intelligence}, 348:104420.
+
+\end{thebibliography}
+
+\end{document}
