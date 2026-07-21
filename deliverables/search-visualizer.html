@@ -78,6 +78,7 @@
       <div class="row"><span class="dot" style="color:var(--path);background:var(--path)"></span>optimal path</div>
       <div class="row"><span class="dot" style="color:var(--start);background:var(--start)"></span>start</div>
       <div class="row"><span class="dot" style="color:var(--goal);background:var(--goal)"></span>goal</div>
+      <div class="row"><span class="dot" style="background:transparent;border:2px solid #fff;box-shadow:none"></span>meeting node</div>
       <div class="row"><span class="dot" style="color:#5b6678;background:#5b6678;box-shadow:none"></span>obstacles (walls)</div>
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer">
@@ -111,7 +112,7 @@ let cur = "mm";
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
 let W=0,H=0,DPR=Math.min(2,window.devicePixelRatio||1);
 let yaw=-0.6, pitch=0.5, zoom=1;      // camera
-let revealed=0, playing=false, speed=35, showMap=true;
+let revealed=0, playing=false, speed=35, showMap=true, pathAlpha=0;
 let anim=null;
 const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -139,7 +140,7 @@ function prep(){
   const path = d.path.map(norm);
   const obs = obsRaw.map(norm);
   G={d,n,path,obs,start:norm(d.start),goal:norm(d.goal)};
-  revealed=0;
+  revealed=0;pathAlpha=0;
   document.getElementById('mapinfo').textContent =
     `${d.dims.join('×')} voxels · instance start ${d.start.join(',')} → goal ${d.goal.join(',')} · ${d.diag?'26-connected':'6-connected'}`;
   document.getElementById('s-tot').textContent=d.expanded;
@@ -196,12 +197,21 @@ function draw(){
   }
   ctx.globalAlpha=1;ctx.shadowBlur=0;
 
-  // path (drawn once search essentially complete)
-  if(revealed>=G.n.length*0.55 && G.path.length){
+  // path: appears only once the frontiers have met (search complete), fading in
+  const done = revealed>=G.n.length;
+  if(done && G.path.length){
+    ctx.globalAlpha=pathAlpha;
     ctx.strokeStyle='#fde047';ctx.lineWidth=2.4;ctx.shadowColor='#fde047';ctx.shadowBlur=10;
     ctx.beginPath();
     G.path.forEach((p,i)=>{const q=project(p);i?ctx.lineTo(q.sx,q.sy):ctx.moveTo(q.sx,q.sy);});
     ctx.stroke();ctx.shadowBlur=0;
+    // meeting node (where the two frontiers joined) — the middle of the path
+    if(G.d.nodes.length && G.path.length>1){
+      const m=G.path[Math.floor(G.path.length/2)];const q=project(m);
+      ctx.strokeStyle='#ffffff';ctx.lineWidth=2;ctx.shadowColor='#fff';ctx.shadowBlur=10;
+      ctx.beginPath();ctx.arc(q.sx,q.sy,7,0,7);ctx.stroke();ctx.shadowBlur=0;
+    }
+    ctx.globalAlpha=1;
   }
   // start / goal
   for(const [pt,c] of [[G.start,'#34d399'],[G.goal,'#f472b6']]){
@@ -220,13 +230,15 @@ function draw(){
 
 function tick(){
   if(!playing)return;
-  revealed=Math.min(revealed+Math.max(1,Math.round(speed*speed/60)),G.n.length);
-  draw();
-  if(revealed>=G.n.length){playing=false;document.getElementById('play').textContent='Replay';}
-  else anim=requestAnimationFrame(tick);
+  if(revealed<G.n.length){                       // still expanding the frontiers
+    revealed=Math.min(revealed+Math.max(1,Math.round(speed*speed/60)),G.n.length);
+    draw();anim=requestAnimationFrame(tick);
+  }else if(pathAlpha<1){                          // frontiers met → fade the path in
+    pathAlpha=Math.min(1,pathAlpha+0.06);draw();anim=requestAnimationFrame(tick);
+  }else{playing=false;document.getElementById('play').textContent='Replay';}
 }
 function play(){
-  if(revealed>=G.n.length)revealed=0;
+  if(revealed>=G.n.length){revealed=0;pathAlpha=0;}
   playing=true;document.getElementById('play').textContent='Pause';
   anim=requestAnimationFrame(tick);
 }
@@ -234,8 +246,8 @@ function pause(){playing=false;document.getElementById('play').textContent='Play
 
 // ---- controls ----
 document.getElementById('play').onclick=()=>playing?pause():play();
-document.getElementById('reset').onclick=()=>{pause();revealed=0;draw();document.getElementById('play').textContent='Play';};
-document.getElementById('seek').oninput=e=>{pause();revealed=+e.target.value;draw();};
+document.getElementById('reset').onclick=()=>{pause();revealed=0;pathAlpha=0;draw();document.getElementById('play').textContent='Play';};
+document.getElementById('seek').oninput=e=>{pause();revealed=+e.target.value;pathAlpha=(revealed>=G.n.length)?1:0;draw();};
 document.getElementById('speed').oninput=e=>{speed=+e.target.value;};
 document.getElementById('showmap').onchange=e=>{showMap=e.target.checked;draw();};
 
@@ -260,5 +272,5 @@ cv.addEventListener('pointerup',()=>drag=false);
 cv.addEventListener('wheel',e=>{e.preventDefault();zoom*=e.deltaY<0?1.08:0.93;zoom=Math.max(0.4,Math.min(4,zoom));draw();},{passive:false});
 
 resize();prep();draw();
-if(!reduce){revealed=0;play();}else{revealed=G.n.length;draw();}
+if(!reduce){revealed=0;play();}else{revealed=G.n.length;pathAlpha=1;draw();}
 </script>
