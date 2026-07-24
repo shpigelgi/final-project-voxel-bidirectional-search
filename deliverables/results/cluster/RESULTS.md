@@ -19,7 +19,7 @@ No wrong-cost results across ~14.7k rows.
 
 | domain / mode | A\* | BiA\* | NBS | BAE\* | MM | rev-A\* |
 |---|--:|--:|--:|--:|--:|--:|
-| plants · diag     | **1.01** | 2.01 | 2.39 | 3.86 | 5.49 | 5.67 |
+| plants · diag     | **1.00** | 2.00 | 2.25 | 3.69 | 5.36 | 4.76 |
 | plants · nodiag   | **1.02** | 2.03 | 3.10 | 3.50 | 3.63 | 2.82 |
 | sandstone · diag  | **1.00** | 1.98 | 2.01 | 2.41 | 2.82 | 2.69 |
 | sandstone · nodiag| **1.05** | 2.01 | 2.38 | 2.63 | 2.96 | 2.51 |
@@ -36,17 +36,19 @@ No wrong-cost results across ~14.7k rows.
   on the blocky plants.
 - **GBFS** is not cost-optimal (reported as `subopt`); it expands far fewer nodes but its
   paths are longer — a speed/quality axis, not comparable to the MVC floor.
-- **Timeouts:** only **MM** hit the wall-clock cap, on the hardest `diag` instances (15%
-  on plants, 24% on sandstone). Its per-node cost (pair-priority queue) makes it slow on
-  the largest searches; every other optimal algorithm finished 100% of instances.
+- **Timeouts:** only **MM** hit the wall-clock cap, on the hardest `diag` instances (28%
+  on plants — driven by the largest map, plant04 — and 24% on sandstone). Its per-node
+  cost (pair-priority queue) makes it slow on the largest searches; every other optimal
+  algorithm finished 100% of instances.
 - **Runtime:** A\* is fastest (~10–40 ms/instance median), MM slowest (seconds on hard
   diag instances). Reverse A\* expands the most on plants but is competitive on sandstone
   — directional asymmetry is domain-specific.
 
 ## Caveats / scope
-- Plants used the first 200 scenario instances/map, sandstone the first 25 (sandstone
-  searches are far heavier — 10⁴–10⁵ expansions — so a smaller, still-representative
-  sample keeps cluster use responsible). Descent not yet run (large map fetch).
+- Plants used the first 200 scenario instances/map (plant04, the largest map, 100),
+  sandstone the first 25 (sandstone searches are far heavier — 10⁴–10⁵ expansions — so a
+  smaller, still-representative sample keeps cluster use responsible). All 5 plant maps and
+  all 11 sandstone maps ran in both modes. Descent not yet run (large map fetch).
 - `diag` MM/BAE\* on the biggest plant maps are very slow at deep instance indices; a
   longer timeout would convert some MM timeouts into completed runs but cost far more
   compute. The medians above are over completed (`status=ok`) instances.
