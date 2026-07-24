@@ -28,7 +28,9 @@ fi
 
 PATHS=()
 for fam in "${FAMILIES[@]}"; do PATHS+=("voxel-maps/$fam"); done
-git -C "$BENCH_DIR" sparse-checkout set "${PATHS[@]}"
+# ADD (not SET): `set` replaces the sparse set and would delete previously-fetched
+# families' tracked files (e.g. .3dscen) from disk. `add` accumulates families.
+git -C "$BENCH_DIR" sparse-checkout add "${PATHS[@]}"
 git -C "$BENCH_DIR" checkout
 
 echo "Unzipping map files ..."

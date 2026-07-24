@@ -148,8 +148,14 @@ int main(int argc, char *argv[])
 
 	VoxelMap env(mapFile, diagonals);
 
-	FILE *f = fopen(scenFile, "r");
-	if (f == 0) { fprintf(stderr, "Cannot open scenario '%s'\n", scenFile); return 1; }
+	// Retry the scenario open: on a shared/NFS filesystem a transient read error can
+	// otherwise lose an entire array task (as happened once to plant04 diag).
+	FILE *f = nullptr;
+	for (int attempt = 0; attempt < 5 && f == nullptr; attempt++) {
+		f = fopen(scenFile, "r");
+		if (f == nullptr) { struct timespec ns{1, 0}; nanosleep(&ns, nullptr); }
+	}
+	if (f == 0) { fprintf(stderr, "Cannot open scenario '%s' after retries\n", scenFile); return 1; }
 	int version; char mapname[512];
 	if (fscanf(f, "version %d\n", &version) != 1 || fscanf(f, "%511s\n", mapname) != 1)
 	{ fprintf(stderr, "Bad scenario header\n"); return 1; }
