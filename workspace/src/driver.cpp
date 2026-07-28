@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
 	bool diagonals = true;
 	double timeoutSec = 0;      // 0 = no timeout
 	long memMB = 0;             // 0 = no cap
+	double hweight = 1.0;       // heuristic scale (crossover study)
 	std::string tag = "";
 	std::vector<std::string> algs = {"astar", "rastar", "mm", "bia", "bae", "nbs", "gbfs"};
 
@@ -138,6 +139,7 @@ int main(int argc, char *argv[])
 		else if (!strcmp(argv[i], "--no-diagonals"))          diagonals = false;
 		else if (!strcmp(argv[i], "--timeout") && i+1 < argc) timeoutSec = atof(argv[++i]);
 		else if (!strcmp(argv[i], "--mem-mb")  && i+1 < argc) memMB = atol(argv[++i]);
+		else if (!strcmp(argv[i], "--hweight") && i+1 < argc) hweight = atof(argv[++i]);
 		else if (!strcmp(argv[i], "--tag")     && i+1 < argc) tag = argv[++i];
 		else if (!strcmp(argv[i], "--algs")    && i+1 < argc) {
 			algs.clear();
@@ -147,6 +149,7 @@ int main(int argc, char *argv[])
 	}
 
 	VoxelMap env(mapFile, diagonals);
+	env.SetHWeight(hweight);
 
 	// Retry the scenario open: on a shared/NFS filesystem a transient read error can
 	// otherwise lose an entire array task (as happened once to plant04 diag).

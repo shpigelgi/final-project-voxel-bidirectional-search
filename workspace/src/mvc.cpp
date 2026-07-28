@@ -120,13 +120,16 @@ int main(int argc, char *argv[])
 	const char *scenFile = argv[2];
 	int limit = 50;
 	bool diagonals = true;
+	double hweight = 1.0;
 	for (int i = 3; i < argc; i++)
 	{
 		if (strcmp(argv[i], "--limit") == 0 && i + 1 < argc) limit = atoi(argv[++i]);
 		else if (strcmp(argv[i], "--no-diagonals") == 0) diagonals = false;
+		else if (strcmp(argv[i], "--hweight") == 0 && i + 1 < argc) hweight = atof(argv[++i]);
 	}
 
 	VoxelMap env(mapFile, diagonals);
+	env.SetHWeight(hweight);   // floor must use the same heuristic as the algorithms
 
 	FILE *f = fopen(scenFile, "r");
 	if (f == 0) { printf("Cannot open scenario '%s'\n", scenFile); return 1; }

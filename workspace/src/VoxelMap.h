@@ -154,21 +154,30 @@ public:
 
 	bool InvertAction(voxAction &a) const override { return false; }
 
+	// Scale the heuristic by w in (0,1] to make it deliberately weaker while staying
+	// admissible+consistent (h' = w*h <= h <= true distance). Used for the
+	// heuristic-strength crossover study; w=1 is the normal octile, w=0 is Dijkstra.
+	void SetHWeight(double w) { hweight = w; }
+
 	// 3D octile heuristic (generalisation of 2D octile): consistent.
 	double HCost(const voxState &n1, const voxState &n2) const override
 	{
 		double xd = fabs((double)n1.x - n2.x);
 		double yd = fabs((double)n1.y - n2.y);
 		double zd = fabs((double)n1.z - n2.z);
-		if (!diagonals)                       // Manhattan when no diagonals
-			return xd + yd + zd;
-		double three = std::min(xd, std::min(yd, zd));
-		xd -= three; yd -= three; zd -= three;
-		double two;
-		if (zd == 0)      { two = std::min(xd, yd); xd -= two; yd -= two; }
-		else if (xd == 0) { two = std::min(zd, yd); zd -= two; yd -= two; }
-		else              { two = std::min(xd, zd); xd -= two; zd -= two; }
-		return three * ROOT_THREE + two * ROOT_TWO + xd + yd + zd;
+		double h;
+		if (!diagonals) {                     // Manhattan when no diagonals
+			h = xd + yd + zd;
+		} else {
+			double three = std::min(xd, std::min(yd, zd));
+			xd -= three; yd -= three; zd -= three;
+			double two;
+			if (zd == 0)      { two = std::min(xd, yd); xd -= two; yd -= two; }
+			else if (xd == 0) { two = std::min(zd, yd); zd -= two; yd -= two; }
+			else              { two = std::min(xd, zd); xd -= two; zd -= two; }
+			h = three * ROOT_THREE + two * ROOT_TWO + xd + yd + zd;
+		}
+		return hweight * h;
 	}
 
 	double GCost(const voxState &n1, const voxState &n2) const override
@@ -214,6 +223,7 @@ private:
 	std::vector<bool> blocked;
 	int xWidth = 0, yWidth = 0, zWidth = 0;
 	bool diagonals = true;
+	double hweight = 1.0;   // heuristic scale (1 = octile, <1 = weaker but still admissible)
 };
 
 #endif /* VoxelMap_h */
