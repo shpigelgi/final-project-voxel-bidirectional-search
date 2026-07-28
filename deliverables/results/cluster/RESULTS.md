@@ -44,6 +44,21 @@ No wrong-cost results across ~14.7k rows.
   diag instances). Reverse A\* expands the most on plants but is competitive on sandstone
   — directional asymmetry is domain-specific.
 
+## Heuristic-strength crossover (the "when does bidirectional win" test)
+Sweeping a weakened heuristic `h' = w·h` (still admissible) on plant01's non-trivial
+instances directly tests the theory's central claim. Median expansions:
+
+| w (→ weaker) | A\* | MM | BAE\* | BiA\* | NBS |
+|---|--:|--:|--:|--:|--:|
+| 1.00 (full octile) | **801** | 19 613 | 17 218 | 1 597 | 7 395 |
+| 0.60 | 215 578 | **79 753** | 132 233 | 306 903 | 297 017 |
+| 0.40 | 314 929 | (timeout) | **110 784** | 286 395 | 211 124 |
+
+**A\* goes from best (801) to worst-of-pack as the heuristic weakens, and MM then BAE\*
+overtake it** — exactly the regime the papers predict for bidirectional search. Nuance:
+it is specifically the meet-in-the-middle (MM) and error-exploiting (BAE\*) methods that
+overtake; plain BiA\*/NBS do not. See `deliverables/report/figures/crossover.pdf`.
+
 ## Caveats / scope
 - Plants used the first 200 scenario instances/map (plant04, the largest map, 100),
   sandstone the first 25 (sandstone searches are far heavier — 10⁴–10⁵ expansions — so a
