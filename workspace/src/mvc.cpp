@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 	const char *mapFile = argv[1];
 	const char *scenFile = argv[2];
 	int limit = 50;
+	int startIdx = 0;
 	bool diagonals = true;
 	double hweight = 1.0;
 	for (int i = 3; i < argc; i++)
@@ -126,6 +127,7 @@ int main(int argc, char *argv[])
 		if (strcmp(argv[i], "--limit") == 0 && i + 1 < argc) limit = atoi(argv[++i]);
 		else if (strcmp(argv[i], "--no-diagonals") == 0) diagonals = false;
 		else if (strcmp(argv[i], "--hweight") == 0 && i + 1 < argc) hweight = atof(argv[++i]);
+		else if (strcmp(argv[i], "--start") == 0 && i + 1 < argc) startIdx = atoi(argv[++i]);
 	}
 
 	VoxelMap env(mapFile, diagonals);
@@ -142,12 +144,13 @@ int main(int argc, char *argv[])
 
 	printf("instance,cstar,fwd_cand,bwd_cand,mvc\n");
 	char line[512];
-	int idx = 0;
-	while (fgets(line, sizeof(line), f) && idx < limit)
+	int idx = 0, done = 0;
+	while (fgets(line, sizeof(line), f) && done < limit)
 	{
 		int sx, sy, sz, gx, gy, gz; double optCost;
 		if (sscanf(line, "%d %d %d %d %d %d %lf", &sx, &sy, &sz, &gx, &gy, &gz, &optCost) != 7)
 			continue;
+		if (idx < startIdx) { idx++; continue; }   // skip to --start
 		voxState s((uint16_t)sx, (uint16_t)sy, (uint16_t)sz), g((uint16_t)gx, (uint16_t)gy, (uint16_t)gz);
 
 		// Exact C* from A* (the scenario cost is rounded to ~6 sig figs).
@@ -161,7 +164,7 @@ int main(int argc, char *argv[])
 
 		printf("%d,%.6f,%zu,%zu,%llu\n", idx, Cstar, fwdG.size(), bwdG.size(), (unsigned long long)mvc);
 		fflush(stdout);
-		idx++;
+		idx++; done++;
 	}
 	fclose(f);
 	return 0;
