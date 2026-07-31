@@ -33,7 +33,7 @@ workspace/cluster/manifest*.tsv
 .vscode/
 *~
 
-# Overleaf upload folder — keep it to just the 3 source files
+# Overleaf upload folder — keep only the source files (.tex, .sty, .bst, .bib)
 deliverables/report/overleaf/*.pdf
 deliverables/report/overleaf/*.aux
 deliverables/report/overleaf/*.log
