@@ -32,3 +32,13 @@ workspace/cluster/manifest*.tsv
 .idea/
 .vscode/
 *~
+
+# Overleaf upload folder — keep it to just the 3 source files
+deliverables/report/overleaf/*.pdf
+deliverables/report/overleaf/*.aux
+deliverables/report/overleaf/*.log
+deliverables/report/overleaf/*.out
+deliverables/report/overleaf/*.bbl
+deliverables/report/overleaf/*.blg
+deliverables/report/overleaf/*.fls
+deliverables/report/overleaf/*.fdb_latexmk
