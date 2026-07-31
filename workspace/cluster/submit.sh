@@ -32,7 +32,11 @@ mkdir -p "$CLUSTER_DIR/logs"
 
 PARTITION="${PARTITION:-cpu}"   # BGU: dedicated CPU partition (our jobs are CPU-only, no GPU)
 extra=(--partition="$PARTITION")
-[ -n "${ACCOUNT:-}" ]   && extra+=(--account="$ACCOUNT")
+[ -n "${ACCOUNT:-}" ] && extra+=(--account="$ACCOUNT")
+# SBATCH-level overrides (big domains like descent need more RAM / a longer wall-clock
+# than run_array.sbatch's defaults). MEM is the node allocation; MEMMB is the per-child cap.
+[ -n "${MEM:-}" ]  && extra+=(--mem="$MEM")
+[ -n "${TIME:-}" ] && extra+=(--time="$TIME")
 
 echo "== Submitting array 1-$N%$CONC =="
 # Export the config into this shell and pass --export=ALL. Do NOT inline these into
