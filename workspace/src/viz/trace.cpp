@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 #include <algorithm>
-#include "VoxelMap.h"
-#include "BiAStar.h"
+#include "../core/VoxelMap.h"
+#include "../core/BiAStar.h"
 #include "TemplateAStar.h"
 #include "MM.h"
 #include "BAE.h"

@@ -16,12 +16,12 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include "VoxelMap.h"
+#include "../core/VoxelMap.h"
 #include "TemplateAStar.h"
 #include "MM.h"
 #include "BAE.h"
 #include "NBS.h"
-#include "BiAStar.h"
+#include "../core/BiAStar.h"
 
 // Independent legality check for a single step a->b under the voxel move model.
 static bool legalStep(const VoxelMap &env, const voxState &a, const voxState &b, bool diag, const char **why)

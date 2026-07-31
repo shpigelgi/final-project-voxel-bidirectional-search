@@ -25,14 +25,16 @@ while IFS= read -r d; do INCS+=("-I$d"); done \
 
 DEPS=("$HOG/utils/Timer.cpp" "$HOG/utils/FPUtil.cpp")
 
-"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/voxdriver" "$HERE/driver.cpp" "${DEPS[@]}" "${INCS[@]}"
-echo "Built: $OUTDIR/voxdriver"
+# Sources are grouped by role: core/ (shared domain + algorithm headers, no .cpp),
+# experiment/ (the measurement binaries), viz/ (the visualizer trace generator).
+# Each .cpp reaches the headers via an explicit "../core/..." include, so no extra
+# -I is needed for our own code.
+build() {  # build <output-name> <source-path>
+	"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/$1" "$HERE/$2" "${DEPS[@]}" "${INCS[@]}"
+	echo "Built: $OUTDIR/$1"
+}
 
-"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/mvc" "$HERE/mvc.cpp" "${DEPS[@]}" "${INCS[@]}"
-echo "Built: $OUTDIR/mvc"
-
-"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/trace" "$HERE/trace.cpp" "${DEPS[@]}" "${INCS[@]}"
-echo "Built: $OUTDIR/trace"
-
-"$CXX" -std=c++17 -O2 $XFLAGS -o "$OUTDIR/validate" "$HERE/validate.cpp" "${DEPS[@]}" "${INCS[@]}"
-echo "Built: $OUTDIR/validate"
+build voxdriver experiment/driver.cpp
+build mvc       experiment/mvc.cpp
+build validate  experiment/validate.cpp
+build trace     viz/trace.cpp

@@ -31,8 +31,8 @@
 #include <sys/wait.h>
 #include <sys/resource.h>
 #include <signal.h>
-#include "VoxelMap.h"
-#include "BiAStar.h"
+#include "../core/VoxelMap.h"
+#include "../core/BiAStar.h"
 #include "Timer.h"
 #include "TemplateAStar.h"
 #include "MM.h"

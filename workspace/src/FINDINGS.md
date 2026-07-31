@@ -59,27 +59,30 @@ driver, which we don't use. So a headless build needs only two `.cpp` files
 
 ## 3. Our code (`workspace/src/`)
 
-- **`VoxelMap.h`** — headless `SearchEnvironment<voxState,voxAction>`. Loads `voxel`
+Laid out by role: `core/` (shared domain + algorithm headers), `experiment/` (the
+measurement binaries), `viz/` (the visualizer trace generator). See `README.md`.
+
+- **`core/VoxelMap.h`** — headless `SearchEnvironment<voxState,voxAction>`. Loads `voxel`
   **and** `rev_voxel`. Move model / costs / heuristic copied verbatim from `VoxelGrid`,
   plus an `allowDiagonals` flag (the brief's "without diagonal movement" = 6 face moves,
   Manhattan heuristic). Because `SearchEnvironment : Heuristic`, the env doubles as the
   fwd/bwd heuristic for bidirectional algorithms.
-- **`driver.cpp`** — headless experiment driver. Parses `version 2` scenarios, runs
+- **`experiment/driver.cpp`** — headless experiment driver. Parses `version 2` scenarios, runs
   A\*, reverse A\*, MM, BAE\*, NBS, GBFS from both directions, emits CSV
   (`instance,alg,expanded,generated,cost,optimal,time_ms,optimal_ok`).
-- **`BiAStar.h`** — Pohl-style bidirectional A\* (BS\*): the brief's "BiA\*". HOG2 has no
+- **`core/BiAStar.h`** — Pohl-style bidirectional A\* (BS\*): the brief's "BiA\*". HOG2 has no
   such class, so we provide one (adapted from `BAE.h`'s skeleton) with priority `f=g+h` and
   the classic optimal termination `U ≤ max(fMin_F, fMin_B)`. Verified optimal on plant01
   (~2× A\* expansions — both frontiers, no meet-in-the-middle cap).
-- **`mvc.cpp`** — computes the per-instance **must-expand floor** = Minimum Vertex Cover
+- **`experiment/mvc.cpp`** — computes the per-instance **must-expand floor** = Minimum Vertex Cover
   of G_MX (Eckerle/Chen; Shaham 2017 threshold scan, base admissible case). Expands each
   direction's f<C\* contour, buckets g-values, and minimizes `#{g_F<τ}+#{g_B<C*−τ}`.
   Emits `instance,cstar,fwd_cand,bwd_cand,mvc`. This is the denominator for the
   expansion-ratio analysis the papers use.
-- **`trace.cpp`** — emits a JSON trace of one search (map, instance, algorithm): every
+- **`viz/trace.cpp`** — emits a JSON trace of one search (map, instance, algorithm): every
   expanded node tagged forward/backward + its priority key, plus the final path. Feeds the
   interactive visualizer. Supports `astar`, `mm`, `bia`, `bae`.
-- **`validate.cpp`** — independent legality auditor. Re-implements the move rule from
+- **`experiment/validate.cpp`** — independent legality auditor. Re-implements the move rule from
   scratch (does NOT call `CanMove`) and verifies (a) the successor generator and (b) every
   returned path take only legal steps: neighbor-only, endpoints free, no corner-cutting.
   Result: 0 illegal across all maps/modes/algorithms (~1.8M successors, ~58k path edges).

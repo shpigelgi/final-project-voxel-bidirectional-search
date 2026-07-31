@@ -26,19 +26,24 @@ cd workspace
 We do **not** use HOG2's GUI app. Our tools link only HOG2's graphics-free search core:
 
 ```bash
-./src/build.sh workspace/bin      # -> bin/voxdriver, bin/mvc
+./src/build.sh workspace/bin      # -> bin/{voxdriver,mvc,validate,trace}
 ```
 
 - `bin/voxdriver` — runs the algorithms on a map/scenario, CSV out, per-instance timeout
-  and memory cap (fork-per-run). See `src/driver.cpp`.
-- `bin/mvc` — per-instance must-expand floor (Minimum Vertex Cover). See `src/mvc.cpp`.
+  and memory cap (fork-per-run). See `src/experiment/driver.cpp`.
+- `bin/mvc` — per-instance must-expand floor (Minimum Vertex Cover). See `src/experiment/mvc.cpp`.
+- `bin/validate` — independent legality auditor. See `src/experiment/validate.cpp`.
+- `bin/trace` — JSON search trace for the 3D visualizer. See `src/viz/trace.cpp`.
+
+Sources are grouped by role (`src/core/` shared, `src/experiment/`, `src/viz/`); see
+[`src/README.md`](src/README.md).
 
 Only needs `git` and a C++17 compiler (`g++`/`clang++`). No cmake, no OpenGL.
 
 ## Running experiments
 
 - **Locally / quick:** `bin/voxdriver <map.3dmap> <scen.3dscen> --limit N` (see `--help` args
-  in `src/driver.cpp`); `bin/mvc <map> <scen>` for the floor.
+  in `src/experiment/driver.cpp`); `bin/mvc <map> <scen>` for the floor.
 - **On the cluster:** see [`cluster/RUNBOOK.md`](cluster/RUNBOOK.md) — `submit.sh` builds,
   generates a manifest, and submits a Slurm array (one task per map×config); `aggregate.py`
   joins results with the MVC floor into summary tables.

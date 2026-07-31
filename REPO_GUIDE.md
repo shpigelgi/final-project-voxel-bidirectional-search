@@ -16,14 +16,15 @@ at the bottom. All of *our* code, and all *results/figures*, are here.)
   `exp_over_mvc`, `winrate`, `directional_asymmetry`, `crossover`.
 
 ## The code we wrote (`workspace/src/`, ~1,100 lines)
-Read in this order:
-1. **`VoxelMap.h`** — headless voxel environment + loader (`voxel`/`rev_voxel`; 26- and
+Grouped by role — `core/` is shared, `experiment/` produces the results, `viz/` feeds the
+interactive UI. Read in this order:
+1. **`core/VoxelMap.h`** — headless voxel environment + loader (`voxel`/`rev_voxel`; 26- and
    6-connectivity; octile costs; no-corner-cutting; the `--hweight` knob).
-2. **`BiAStar.h`** — Pohl-style bidirectional A\* (the brief's "BiA\*", absent from HOG2).
-3. **`driver.cpp`** — experiment runner (both directions; fork + timeout + memory cap; CSV).
-4. **`mvc.cpp`** — the theoretical floor (Minimum Vertex Cover of the must-expand graph).
-5. **`validate.cpp`** — independent legality auditor (no illegal / clipping moves).
-6. **`trace.cpp`** — search trace for the 3D visualizer.
+2. **`core/BiAStar.h`** — Pohl-style bidirectional A\* (the brief's "BiA\*", absent from HOG2).
+3. **`experiment/driver.cpp`** — experiment runner (both directions; fork + timeout + memory cap; CSV).
+4. **`experiment/mvc.cpp`** — the theoretical floor (Minimum Vertex Cover of the must-expand graph).
+5. **`experiment/validate.cpp`** — independent legality auditor (no illegal / clipping moves).
+6. **`viz/trace.cpp`** — search trace for the 3D visualizer.
 
 `workspace/src/FINDINGS.md` is the engineering narrative tying these together, incl. the
 HOG2 quirks we hit and the BAE\* bug we fixed.

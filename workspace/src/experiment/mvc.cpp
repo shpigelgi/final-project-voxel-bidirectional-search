@@ -27,7 +27,7 @@
 #include <queue>
 #include <algorithm>
 #include <unordered_map>
-#include "VoxelMap.h"
+#include "../core/VoxelMap.h"
 #include "TemplateAStar.h"
 #include "FPUtil.h"
 
