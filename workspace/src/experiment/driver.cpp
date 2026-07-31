@@ -16,7 +16,9 @@
 //           [--algs astar,rastar,mm,bae,nbs,gbfs]
 //           [--timeout SECONDS] [--mem-mb MB] [--tag STR]
 //
-//  CSV (stdout): tag,instance,alg,expanded,generated,cost,optimal,time_ms,status
+//  CSV (stdout): tag,instance,alg,expanded,generated,cost,optimal,time_ms,status,peak_mb
+//    peak_mb: peak resident set size of the child (MB); for timeout/oom/error rows it
+//    is the killed child's peak (via wait4), i.e. how large the search had grown.
 //    status ∈ ok | subopt | timeout | oom | error | nopath
 //
 #include <cstdio>
@@ -49,6 +51,17 @@ static double nowSeconds()
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	return ts.tv_sec + ts.tv_nsec * 1e-9;
+}
+
+// Peak resident set size, in MB. getrusage reports ru_maxrss in KB on Linux
+// (the cluster) but in bytes on macOS/BSD, so normalise to MB on both.
+static double peakRSSmb(long ru_maxrss)
+{
+#ifdef __APPLE__
+	return ru_maxrss / (1024.0 * 1024.0);
+#else
+	return ru_maxrss / 1024.0;
+#endif
 }
 
 // Run one algorithm on one instance and print its CSV row. Called inside the child.
@@ -109,10 +122,11 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 	else if (costOK(cost, opt))                                   status = "ok";
 	else                                                          status = "subopt";
 
-	printf("%s,%d,%s,%llu,%llu,%.6f,%.6f,%.3f,%s\n",
+	struct rusage ru; getrusage(RUSAGE_SELF, &ru);
+	printf("%s,%d,%s,%llu,%llu,%.6f,%.6f,%.3f,%s,%.1f\n",
 		   tag, idx, alg.c_str(),
 		   (unsigned long long)expanded, (unsigned long long)generated,
-		   cost, opt, t.GetElapsedTime() * 1000.0, status);
+		   cost, opt, t.GetElapsedTime() * 1000.0, status, peakRSSmb(ru.ru_maxrss));
 	fflush(stdout);
 }
 
@@ -180,7 +194,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "Loaded %zu instances (map v%d %s, tag='%s', timeout=%.0fs, mem=%ldMB)\n",
 			instances.size(), version, mapname, tag.c_str(), timeoutSec, memMB);
 
-	printf("tag,instance,alg,expanded,generated,cost,optimal,time_ms,status\n");
+	printf("tag,instance,alg,expanded,generated,cost,optimal,time_ms,status,peak_mb\n");
 	fflush(stdout);
 
 	int last = std::min((int)instances.size(), startIdx + limit);
@@ -200,24 +214,26 @@ int main(int argc, char *argv[])
 			// ---- parent: enforce wall-clock timeout ----
 			double t0 = nowSeconds();
 			int status; pid_t r;
-			bool killed = false;
-			while ((r = waitpid(pid, &status, WNOHANG)) == 0) {
+			struct rusage ru; bool killed = false;
+			while ((r = wait4(pid, &status, WNOHANG, &ru)) == 0) {
 				if (timeoutSec > 0 && nowSeconds() - t0 > timeoutSec) {
-					kill(pid, SIGKILL); waitpid(pid, &status, 0); killed = true; break;
+					kill(pid, SIGKILL); wait4(pid, &status, 0, &ru); killed = true; break;
 				}
 				struct timespec ns{0, 20 * 1000 * 1000}; nanosleep(&ns, nullptr); // 20ms poll
 			}
 			// Parent reports only failures; the child prints its own row on success.
+			// For these rows peak_mb is the killed/failed child's peak RSS (via wait4).
+			double peak = peakRSSmb(ru.ru_maxrss);
 			if (killed) {
-				printf("%s,%d,%s,0,0,0,%.6f,%.3f,timeout\n",
-					   tag.c_str(), i, alg.c_str(), instances[i].optimal, timeoutSec * 1000.0);
+				printf("%s,%d,%s,0,0,0,%.6f,%.3f,timeout,%.1f\n",
+					   tag.c_str(), i, alg.c_str(), instances[i].optimal, timeoutSec * 1000.0, peak);
 				fflush(stdout);
 			} else if (WIFSIGNALED(status)) {
 				const char *st = (WTERMSIG(status) == SIGKILL) ? "oom" : "error";
-				printf("%s,%d,%s,0,0,0,%.6f,0,%s\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, st);
+				printf("%s,%d,%s,0,0,0,%.6f,0,%s,%.1f\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, st, peak);
 				fflush(stdout);
 			} else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-				printf("%s,%d,%s,0,0,0,%.6f,0,error\n", tag.c_str(), i, alg.c_str(), instances[i].optimal);
+				printf("%s,%d,%s,0,0,0,%.6f,0,error,%.1f\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, peak);
 				fflush(stdout);
 			}
 		}

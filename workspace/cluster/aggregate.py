@@ -56,12 +56,13 @@ def main():
                     "alg": row["alg"], "expanded": exp,
                     "cost": row.get("cost", ""), "optimal": row.get("optimal", ""),
                     "time_ms": row.get("time_ms", ""), "status": row.get("status", ""),
+                    "peak_mb": row.get("peak_mb", ""),
                     "mvc": floor if floor is not None else "", "exp_over_mvc": ratio,
                 })
 
     long_csv = os.path.join(out_dir, "combined_long.csv")
     fields = ["family","map","config","instance","alg","expanded","cost","optimal",
-              "time_ms","status","mvc","exp_over_mvc"]
+              "time_ms","status","peak_mb","mvc","exp_over_mvc"]
     with open(long_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields); w.writeheader(); w.writerows(long_rows)
 
@@ -79,6 +80,7 @@ def main():
         ratios = [r["exp_over_mvc"] for r in rows
                   if r["status"] == "ok" and isinstance(r["exp_over_mvc"], float)]
         times = [float(r["time_ms"]) for r in rows if r["status"] == "ok" and r["time_ms"]]
+        peaks = [float(r["peak_mb"]) for r in rows if r["status"] == "ok" and r["peak_mb"]]
         summ.append({
             "family": family, "config": config, "alg": alg, "n": n,
             "pct_ok": round(100*st.get("ok",0)/n, 1) if n else 0,
@@ -89,11 +91,13 @@ def main():
             "mean_exp_over_mvc": round(statistics.mean(ratios), 2) if ratios else "",
             "median_exp_over_mvc": round(statistics.median(ratios), 2) if ratios else "",
             "mean_time_ms": round(statistics.mean(times), 3) if times else "",
+            "median_peak_mb": round(statistics.median(peaks), 1) if peaks else "",
         })
 
     summ_csv = os.path.join(out_dir, "summary.csv")
     sfields = ["family","config","alg","n","pct_ok","pct_subopt","pct_timeout","pct_fail",
-               "mean_expanded","mean_exp_over_mvc","median_exp_over_mvc","mean_time_ms"]
+               "mean_expanded","mean_exp_over_mvc","median_exp_over_mvc","mean_time_ms",
+               "median_peak_mb"]
     with open(summ_csv, "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=sfields); w.writeheader(); w.writerows(summ)
 
