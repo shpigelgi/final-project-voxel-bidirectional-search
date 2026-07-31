@@ -1,203 +1,37 @@
-% =====================================================================
-%  PROJECT REPORT — TEMPLATE (structure only; fill in the prose).
-%  Course 237-2-5513 "Search Methods in AI", BGU. Submit in pairs.
-%
-%  REQUIRED FORMAT: AAAI'27 Camera-Ready (per the submission guidelines,
-%  instructions/project-submission-guidelines.pdf). To produce the final PDF:
-%    1. Download the AAAI'27 author kit (aaai.sty/aaai27.sty, aaai27.bst, etc.)
-%       from the link in the guidelines and put the files in this folder.
-%    2. Swap the PLACEHOLDER preamble below for the AAAI block (both are provided).
-%    3. Keep \nocopyright (removes the first-page copyright footnote).
-%  The PLACEHOLDER preamble compiles today and approximates the AAAI two-column
-%  look so you can see the structure immediately; it is NOT submission-valid.
-% =====================================================================
-
-% ---- SUBMISSION preamble (uncomment for camera-ready; delete the placeholder) ----
-% \documentclass[letterpaper]{article}
-% \usepackage{aaai27}            % official AAAI'27 style
-% \usepackage{times}\usepackage{helvet}\usepackage{courier}
-% \usepackage[hyphens]{url}\usepackage{graphicx}\usepackage{booktabs}
-% \frenchspacing \setlength{\pdfpagewidth}{8.5in}\setlength{\pdfpageheight}{11in}
-% \pdfinfo{/Title (Bidirectional Heuristic Search on Voxel Maps) /Author (...)}
-% \nocopyright
-
-% ---- PLACEHOLDER preamble (compiles now; approximates AAAI; replace for submission) ----
-\documentclass[twocolumn,10pt,letterpaper]{article}
-\usepackage[margin=0.75in,columnsep=0.3in]{geometry}
-\usepackage{times}
-\usepackage{graphicx}\usepackage{booktabs}\usepackage{amsmath}
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
 \usepackage[hidelinks]{hyperref}
-\usepackage{titlesec}
-\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
-\titleformat{\subsection}{\normalfont\bfseries}{\thesubsection}{0.5em}{}
-\setlength{\parindent}{1em}\frenchspacing
-% \nocopyright  % (only meaningful under the real AAAI style)
 
-% ---------------------------------------------------------------------
-\title{\bfseries Bidirectional Heuristic Search on 3D Voxel Maps}
-\author{Gilad Shpigelman \and \textit{[partner name]} \\
-  \small Ben-Gurion University of the Negev \\
-  \small Search Methods in Artificial Intelligence (237-2-5513) --- Advisor: Lior Siag}
+\title{Bidirectional Heuristic Search on 3D Voxel Maps}
+\author{Gilad Shpigelman \and [partner name]\\
+  Ben-Gurion University --- Search Methods in AI (237-2-5513)}
 \date{}
 
 \begin{document}
 \maketitle
-
-% =====================================================================
 \begin{abstract}
-% ~150 words, written LAST. State: the problem (run bidirectional heuristic
-% search — MM, BAE*, BiA*, NBS — vs. A* on 3D voxel pathfinding), the method
-% (Warthog benchmarks in HOG2, measured against the must-expand / MVC floor),
-% and the single headline result (A* is near-optimal on strong-heuristic voxel
-% domains; bidirectional overtakes it only as the heuristic weakens / on
-% maze-like descent). One sentence of quantified takeaway.
+% Write last. ~150 words: problem, method, one headline result.
 \end{abstract}
 
-% =====================================================================
 \section{Introduction and Literature Review}
-\label{sec:intro}
-% GRADED ON (per guidelines): quality of the literature review, depth of
-% understanding of the sources, presentation of motivation, order, clarity,
-% and proper academic writing with correct citations.
-%
-% Draw the content from deliverables/report/background-and-plan.pdf (already
-% written) and the 7 PDFs in resources/papers/. Cover, in order:
+% Background + motivation + problem statement; review of the theory papers.
 
-\subsection{Problem and motivation}
-% - What bidirectional heuristic search (BiHS) is and why it *might* beat
-%   unidirectional A* (each frontier travels ~half the distance).
-% - The concrete task (Lior's brief): run MM/BAE*/A*/BiA*/GBFS from both
-%   directions on the Warthog 3D voxel benchmarks inside HOG2, with and without
-%   diagonal movement, and analyse them.
-% - State the research question the report answers (the thesis, see Sec. 4).
-
-\subsection{Related work}
-% Synthesise, don't reproduce. Must include and CITE:
-%  * Must-expand pairs -> the must-expand graph G_MX -> Minimum Vertex Cover as
-%    the provable lower bound on expansions (Eckerle 2017; Chen/NBS 2017). This
-%    is your yardstick — introduce it here.
-%  * MM meet-in-the-middle, priority max(f,2g) (Holte 2017).
-%  * BAE* — the b = f + d error-based priority (Alcazar 2020).
-%  * Consistency & the lower-bound unification; the prediction that BiHS helps
-%    more when the heuristic is weak (Shaham 2018; Siag \& Shperberg 2025).
-%  * The voxel domain / benchmark paper (Nobes et al. 2023).
-% Reuse the bibliography from background-and-plan.tex.
-
-% =====================================================================
 \section{Methodology}
-\label{sec:method}
-% GRADED ON: level of detail, matching the methodology to the project goals,
-% professional justification of the technical choices, and REPRODUCIBILITY
-% (someone should be able to repeat the steps). Source: workspace/src/FINDINGS.md.
+% Domain and move model; HOG2 + our loader/algorithms; the MVC-floor metric;
+% correctness checks; experimental setup (cluster, timeouts, heuristic-weight sweep).
 
-\subsection{Domain and movement model}
-% 3D voxel grid; the .3dmap format (voxel / rev_voxel); 26-connectivity (diag)
-% with octile-3D costs {1, sqrt2, sqrt3} and the no-corner-cutting rule; the
-% 6-connected (nodiag) unit-cost variant. Both were run.
-
-\subsection{System: HOG2, the loader, and the algorithms}
-% - What existed vs. what we built: HOG2's Voxels class is a non-functional
-%   search stub; we wrote a headless VoxelMap (src/core/VoxelMap.h; loads both
-%   formats, both connectivities). BiA* had no HOG2 class, so we implemented
-%   Pohl-style bidirectional A* (src/core/BiAStar.h). Note the BAE* gcd-rounding
-%   bug we found+fixed (see FINDINGS.md).
-% - The algorithms compared: A*, reverse A*, MM, BiA*, BAE*, NBS, GBFS.
-
-\subsection{Metric: the must-expand floor}
-% Node expansions reported as a ratio to the per-instance MVC of G_MX
-% (src/experiment/mvc.cpp). Explain why this is the right yardstick (the
-% provable minimum number of expansions any correct BiHS algorithm needs).
-
-\subsection{Correctness}
-% Two checks: (i) all optimal algorithms return the identical cost per instance
-% (100% agreement); (ii) an independent legality auditor (src/experiment/validate.cpp)
-% confirms 0 illegal / wall-clipping moves.
-
-\subsection{Experimental setup (reproducibility)}
-% BGU HPC (Slurm cpu partition), one array task per map x movement-mode, per-
-% instance fork + timeout + memory cap. State the exact knobs used: LIMIT,
-% TIMEOUT, --mem, and the heuristic-weight sweep (h' = w*h) for the crossover.
-% Point to the reproducible pipeline: cluster/RUNBOOK.md + the bgu-cluster skill.
-
-% =====================================================================
 \section{Experimental Results}
-\label{sec:results}
-% GRADED ON: quality of data presentation (tables/graphs), depth of analysis,
-% and well-founded conclusions vs. baselines. LEAD WITH FIGURES.
-% All figures are in deliverables/report/figures/*.pdf; numbers in
-% deliverables/results/cluster/{summary.csv, RESULTS.md}. Report MEDIANS.
+% The findings: expansions vs. the floor, per-instance win-rate, directional
+% asymmetry, the heuristic-strength crossover, descent, GBFS trade-off.
 
-\subsection{Expansions vs. the theoretical floor}
-% Figure: exp_over_mvc.pdf. A* ~1.0x the floor; bidirectional 2-6x; the spread
-% narrows on sandstone. (Use Fig.~\ref{fig:mvc}.)
-\begin{figure}[t]\centering
-  \includegraphics[width=\columnwidth]{figures/exp_over_mvc.pdf}
-  \caption{Median expansions relative to the must-expand floor, per algorithm
-    across domains and movement models. Lower is better; 1.0 is optimal.}
-  \label{fig:mvc}
-\end{figure}
-
-\subsection{Who actually wins per instance}
-% Figure: winrate.pdf. A* wins ~66%, but bidirectional wins ~34% — resist the
-% "A* always wins" oversimplification.
-
-\subsection{Directional asymmetry}
-% Figure: directional_asymmetry.pdf. reverse/forward A* ratio (plants-diag
-% ~2.9x). This is the explanatory variable for why MM overpays.
-
-\subsection{The heuristic-strength crossover}
-% Figure: crossover.pdf. As h weakens, A* explodes and MM/BAE* overtake it —
-% the theory's central prediction, demonstrated. Note the nuance (MM/BAE*
-% overtake; plain BiA*/NBS do not).
-\begin{figure}[t]\centering
-  \includegraphics[width=\columnwidth]{figures/crossover.pdf}
-  \caption{Expansions vs.\ heuristic weight $w$ ($h'=w\,h$). A* is best at full
-    strength but is overtaken by MM/BAE* as the heuristic weakens.}
-  \label{fig:xover}
-\end{figure}
-
-\subsection{Descent (maze-like domain)}
-% Add once the descent cluster run lands. This is the domain where BiHS is
-% predicted to win (long corridors -> high heuristic error). Report whether
-% MM/BAE* actually beat A* here — the headline the plants/sandstone runs could
-% not show. A summary table (per-domain median exp/MVC) also belongs here.
-
-\subsection{GBFS trade-off}
-% Not cost-optimal (report separately): ~1% of A*'s expansions on plants for
-% ~4% longer paths; a worse trade on sandstone.
-
-% =====================================================================
 \section{Conclusions and Summary}
-\label{sec:concl}
-% SHORT chapter. GRADED ON: the overall picture vs. the stated goals, depth of
-% understanding, coherence, self-criticism, and a future-work proposal.
-% - Restate the thesis and whether the goals were met: on strong-heuristic voxel
-%   domains forward A* is essentially optimal and the choice of bidirectional
-%   method matters less than heuristic strength + directional asymmetry; the
-%   crossover (and descent) show where BiHS does win.
-% - Central contribution: the loader + BiA*, the MVC-floor measurement, and the
-%   crossover experiment tying the empirics to the theory.
-% - Limitations: bounded instance counts; MM timeouts on the hardest instances;
-%   the base-admissible (not consistency-aware) MVC floor.
-% - Future work: consistency-aware floor (Shaham 2018 / Siag 2025); weakened-
-%   heuristic sweeps across all domains; front-to-front / DVCBS / DBBS.
+% Short: thesis + whether goals were met; contribution; limitations; future work.
 
-% =====================================================================
-\section*{Code and Reproducibility}
-% REQUIRED by the guidelines: a link to the code that ran the experiments and
-% produced the figures.
-Code, data, and figures: \url{https://github.com/shpigelgi/final-project-voxel-bidirectional-search}.
-% Reproduce via workspace/scripts/{setup,fetch-benchmarks}.sh, the conda static
-% build, and cluster/submit.sh (see cluster/RUNBOOK.md).
+\section*{Code}
+% Required: link to the repository.
+\url{https://github.com/shpigelgi/final-project-voxel-bidirectional-search}
 
-% =====================================================================
-% BIBLIOGRAPHY. For camera-ready use aaai27.bst + a .bib. The entries you need
-% are already in deliverables/report/background-and-plan.tex (Holte 2017,
-% Eckerle 2017, Chen 2017/NBS, Shaham 2017/2018, Alcazar 2020, Siag 2025,
-% Nobes 2023, Dechter-Pearl 1985, Kaindl-Kainz 1997). Copy them into report.bib.
-\begin{thebibliography}{9}
-\bibitem{placeholder} % replace with \bibliography{report} under aaai27.bst
-  Author, A. \emph{Copy the entries from background-and-plan.tex}. 2025.
-\end{thebibliography}
+\bibliographystyle{plain}
+% \bibliography{report}   % add references later
 
 \end{document}
