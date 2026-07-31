@@ -1,37 +1,65 @@
-\documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage[hidelinks]{hyperref}
+% Bidirectional Heuristic Search on 3D Voxel Maps — AAAI 2026 format.
+% Overleaf: upload this folder (report.tex + aaai2026.sty + aaai2026.bst) as a
+% project and compile with pdfLaTeX. Minimal skeleton — section headers only.
+
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage{aaai2026}  % AAAI 2026 style
+\usepackage{times}     % DO NOT CHANGE THIS
+\usepackage{helvet}    % DO NOT CHANGE THIS
+\usepackage{courier}   % DO NOT CHANGE THIS
+\usepackage[hyphens]{url} % DO NOT CHANGE THIS
+\usepackage{graphicx}  % DO NOT CHANGE THIS
+\urlstyle{rm}          % DO NOT CHANGE THIS
+\def\UrlFont{\rm}      % DO NOT CHANGE THIS
+\usepackage{natbib}    % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption}   % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing         % DO NOT CHANGE THIS
+\setlength{\pdfpagewidth}{8.5in}  % DO NOT CHANGE THIS
+\setlength{\pdfpageheight}{11in}  % DO NOT CHANGE THIS
+
+\pdfinfo{
+/TemplateVersion (2026.1)
+}
+
+\setcounter{secnumdepth}{0} % may set to 1 or 2 if you want numbered sections
+\nocopyright                % removes the first-page copyright footnote
 
 \title{Bidirectional Heuristic Search on 3D Voxel Maps}
-\author{Gilad Shpigelman \and [partner name]\\
-  Ben-Gurion University --- Search Methods in AI (237-2-5513)}
-\date{}
+\author{
+    Gilad Shpigelman,
+    [Partner Name]
+}
+\affiliations{
+    Ben-Gurion University of the Negev\\
+    Search Methods in Artificial Intelligence (237-2-5513) --- Advisor: Lior Siag
+}
 
 \begin{document}
 \maketitle
+
 \begin{abstract}
-% Write last. ~150 words: problem, method, one headline result.
+% Write last (~150 words): problem, method, headline result.
 \end{abstract}
 
 \section{Introduction and Literature Review}
-% Background + motivation + problem statement; review of the theory papers.
+% Background, motivation, problem statement; review of the theory papers.
 
 \section{Methodology}
-% Domain and move model; HOG2 + our loader/algorithms; the MVC-floor metric;
-% correctness checks; experimental setup (cluster, timeouts, heuristic-weight sweep).
+% Domain and move model; HOG2 + our loader/algorithms; the must-expand (MVC)
+% floor metric; correctness checks; experimental setup.
 
 \section{Experimental Results}
-% The findings: expansions vs. the floor, per-instance win-rate, directional
-% asymmetry, the heuristic-strength crossover, descent, GBFS trade-off.
+% Expansions vs. the floor; per-instance win-rate; directional asymmetry;
+% the heuristic-strength crossover; descent; GBFS trade-off.
 
 \section{Conclusions and Summary}
-% Short: thesis + whether goals were met; contribution; limitations; future work.
+% Short: thesis and whether goals were met; contribution; limitations; future work.
 
-\section*{Code}
-% Required: link to the repository.
+\section{Code}
+% Required by the guidelines.
 \url{https://github.com/shpigelgi/final-project-voxel-bidirectional-search}
 
-\bibliographystyle{plain}
+% \bibliographystyle{aaai2026}
 % \bibliography{report}   % add references later
 
 \end{document}
