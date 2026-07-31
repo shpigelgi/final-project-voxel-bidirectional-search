@@ -40,12 +40,118 @@
 % Background, motivation, problem statement; review of the theory papers.
 
 \section{Methodology}
-% Domain and move model; HOG2 + our loader/algorithms; the must-expand (MVC)
-% floor metric; correctness checks; experimental setup.
+The contribution of this work is not the algorithms---they are established---but
+\emph{how we measure them}: against a per-instance, provably minimal number of expansions.
+We therefore describe the domain and algorithms only as far as reproducibility requires,
+and develop the floor metric and the experiment built around it in full.
+
+\subsection{Domain and Algorithms}
+We use the Warthog 3D voxel benchmarks \citep{brewer2018voxel,nobes2023voxel}, running each
+instance under two movement models: \textbf{26-connectivity}, where a voxel connects to all
+$26$ neighbours at octile costs $\{1,\sqrt{2},\sqrt{3}\}$ under a \emph{no-corner-cutting}
+rule (a diagonal step through a blocked voxel is illegal), and \textbf{6-connectivity},
+the six axis-aligned neighbours at unit cost. The heuristic is the matching
+coordinate-difference distance (3D octile, or Manhattan without diagonals). Crucially it is
+\emph{consistent}: this is the precondition the must-expand theory below relies on
+\citep{shaham2018consistent,siag2025bridging}, not an incidental detail.
+
+We compare unidirectional \textbf{A*} \citep{hart1968astar} and its reverse against four
+front-to-end bidirectional algorithms: \textbf{MM} \citep{holte2017mm}, ordering by
+$\max(f,2g)$; \textbf{NBS} \citep{chen2017nbs}, near-optimal in expansions; \textbf{BAE*}
+\citep{sadhukhan2013bae}, using the error estimate $b=f+d$; and \textbf{BiA*}, a Pohl-style
+bidirectional A* \citep{pohl1971bidirectional} we implemented (it is absent from HOG2),
+terminating when $U \le \max(f^{\min}_F, f^{\min}_B)$. \textbf{GBFS} serves as a fast,
+suboptimal reference. Two points are not boilerplate: BiA* is our own code, and BAE*'s
+lower bound rounds up to the greatest common divisor of the edge costs---unsound for the
+irrational $\{\sqrt2,\sqrt3\}$ costs, so we disable that rounding to restore optimality.
+
+\subsection{The Must-Expand Floor: Our Metric of Record}
+Comparing raw expansion counts, or one algorithm against another, cannot say whether a
+search was \emph{good in absolute terms}. So instead of a relative comparison we measure
+every algorithm against the provable minimum number of expansions that \emph{any}
+front-to-end bidirectional algorithm with the same heuristic must perform on that instance
+\citep{eckerle2017sufficient,shaham2017minimal}. This floor is the backbone of the entire
+study; the rest of the method exists to compute and exercise it correctly.
+
+Fix an instance with optimal cost $C^\ast$, which we take from an exact A* solve---using the
+\emph{recovered path length}, not the value stored in the scenario file, which is rounded
+and would corrupt the strict comparisons below. A forward node $u$ is a must-expand
+candidate iff $f_F(u) < C^\ast$, and symmetrically a backward node $v$ iff $f_B(v) < C^\ast$;
+a pair $(u,v)$ forms a must-expand edge iff
+\[
+  g_F(u) + g_B(v) < C^\ast .
+\]
+Any algorithm must expand at least one endpoint of every such edge, so a \emph{vertex
+cover} of this graph lower-bounds expansions, and the tightest bound is its minimum vertex
+cover. For consistent heuristics the optimal cover has a threshold form
+\citep{shaham2018consistent}, which turns an NP-hard problem into a linear scan:
+\[
+  |\mathrm{VC}| \;=\; \min_{\tau}\;\Big(\;\#\{u : g_F(u) < \tau\}
+      \;+\; \#\{v : g_B(v) < C^\ast - \tau\}\;\Big).
+\]
+We recover the two $g$-value multisets by expanding each direction's full $f<C^\ast$ contour
+(consistency makes the first settle of a node optimal), then scan $\tau$ over their
+breakpoints for the minimum. Every result is reported as \textbf{expansions divided by this
+floor}: a value of $1.0\times$ means the search was \emph{provably optimal}---it could not
+have expanded fewer nodes---and larger values are the exact factor of avoidable work.
+
+\subsection{The Heuristic-Strength Experiment}
+The floor tells us how far each algorithm is from optimal at full heuristic strength; the
+central \emph{question} of bidirectional search is when it becomes worthwhile at all. We
+test this directly with a controlled weakening experiment. Our environment exposes a weight
+$h'(\cdot)=w\,h(\cdot)$, $w\in[0,1]$: at $w{=}1$ the heuristic is the exact octile distance,
+at $w{=}0$ the search degenerates to Dijkstra's algorithm, and every value in between
+remains admissible. Holding the domain, instances, and algorithms fixed, we sweep $w$
+downward and locate the crossover at which bidirectional search overtakes A*---a direct
+test of the theory's claim that the bidirectional advantage is heuristic-dependent
+\citep{alcazar2020unifying,siag2025bridging}.
+
+\subsection{Setup, Correctness, and Reported Statistics}
+The search core is HOG2 \citep{sturtevant2016hog2}, compiled headless for the cluster; on
+top of it our voxel environment implements both move models, no-corner-cutting, the weight
+knob, and the floor. We run three families of differing structure---\emph{industrial
+plants} (cluttered), \emph{sandstone} (porous), and \emph{descent} (maze-like)---solving
+each instance in both directions, every run isolated in a forked process under a wall-clock
+timeout and a memory cap, dispatched as a Slurm array. Timeouts and failures are recorded,
+never silently dropped.
+
+Because we assert optimality, we verify it: an \emph{independent} auditor re-implements the
+move rule from scratch and finds \textbf{0 illegal moves} across ${\sim}1.8$M generated
+successors and ${\sim}58$k path edges, and all optimal algorithms agree on $C^\ast$.
+
+``Comparing the algorithms'' is not a single number, and the literature we build on measures
+several complementary things \citep{holte2017mm,alcazar2020unifying,siag2025bridging}. We
+report each algorithm along the following axes:
+\begin{itemize}
+  \item \textbf{(A) Search efficiency}---expansions divided by the must-expand floor. This
+  is the theory currency \citep{siag2025bridging} and our primary axis. We report the
+  \emph{median} (not the mean: the distribution is heavy-tailed, so the mean tracks a few
+  pathological instances), together with the per-instance \textbf{win rate}.
+  \item \textbf{(B) Time efficiency}---wall-clock time and time-per-expansion. The latter
+  separates search work (node count, axis A) from per-node overhead; we read wall-clock with
+  care, as it reflects our implementation as well as the algorithm.
+  \item \textbf{(C) Robustness}---the timeout and failure rate on hard instances, which also
+  bounds the set of instances axis A is summarised over.
+  \item \textbf{(D) Direction}---forward vs.\ backward search of the same instance, a
+  first-class property of these benchmarks, whose authors document a directional bias in the
+  maps themselves \citep{brewer2018voxel,nobes2023voxel}.
+\end{itemize}
+Axis \textbf{(E)}, the dependence of all of the above on \emph{heuristic strength}, is the
+dedicated weakening experiment of the previous subsection. The organising question, following
+\emph{bridging theory and practice} \citep{siag2025bridging}, is where an algorithm's
+theoretical efficiency (A) does and does not translate into practical performance (B, C).
 
 \section{Experimental Results}
-% Expansions vs. the floor; per-instance win-rate; directional asymmetry;
-% the heuristic-strength crossover; descent; GBFS trade-off.
+% Organise around the five axes from Methodology:
+% (A) Search efficiency: expansions/floor table + win-rate. Headline: A* ~1.0x floor;
+%     bidirectional 2-6x. Lead here.
+% (B) Time efficiency: wall-clock + time-per-expansion. The disagreement with (A) is the
+%     point -- MM competitive-ish on nodes but ~6-8x per-node cost.
+% (C) Robustness: timeout rate. Only MM(diag) times out (~25%); frames what (A) covers.
+% (D) Direction: forward vs backward asymmetry (strongest on descent/mazes).
+% (E) Heuristic-strength crossover: A* best->worst as h weakens; MM then BAE* overtake
+%     (BiA*/NBS do not). The central result.
+% Close: GBFS as the speed/quality trade-off (not comparable to the floor).
 
 \section{Conclusions and Summary}
 % Short: thesis and whether goals were met; contribution; limitations; future work.
