@@ -60,6 +60,27 @@ def fig_exp_over_mvc(rows, f, out):
     ax.legend(ncol=6, fontsize=9, frameon=False, loc="upper center", bbox_to_anchor=(0.5,1.14))
     fig.tight_layout(); save(fig,out,"exp_over_mvc")
 
+def fig_memory(rows, f, out):
+    # median peak resident memory (MB) per (family,config,alg), optimal algos
+    vals=defaultdict(list)
+    for r in rows:
+        v=f(r.get("peak_mb",""))
+        if v is not None and r["status"]=="ok" and r["alg"] in OPT:
+            vals[(r["family"],r["config"],r["alg"])].append(v)
+    if not vals:
+        print("memory fig skipped: no peak_mb data"); return
+    groups=sorted({(k[0],k[1]) for k in vals})
+    fig,ax=plt.subplots(figsize=(9,4.6))
+    n=len(ORDER); w=0.8/n; xs=range(len(groups))
+    for i,alg in enumerate(ORDER):
+        ys=[st.median(vals.get((fam,cfg,alg),[float("nan")])) if vals.get((fam,cfg,alg)) else 0 for fam,cfg in groups]
+        ax.bar([x+i*w for x in xs], ys, width=w, color=COLOR[alg], label=LABEL[alg], zorder=3)
+    ax.set_xticks([x+0.4-w/2 for x in xs]); ax.set_xticklabels([f"{fam.split('-')[0]}\n{cfg}" for fam,cfg in groups])
+    ax.set_ylabel("median peak memory / instance (MB)")
+    ax.set_title("Peak memory footprint (MM is consistently the heaviest)")
+    ax.legend(ncol=6, fontsize=9, frameon=False, loc="upper center", bbox_to_anchor=(0.5,1.14))
+    fig.tight_layout(); save(fig,out,"memory")
+
 def fig_winrate(rows, f, out):
     inst=defaultdict(dict)
     for r in rows:
@@ -131,7 +152,7 @@ def save(fig,out,name):
 if __name__=="__main__":
     results=sys.argv[1]; out=sys.argv[2]
     rows,f=load(results)
-    fig_exp_over_mvc(rows,f,out); fig_winrate(rows,f,out); fig_asymmetry(rows,f,out)
+    fig_exp_over_mvc(rows,f,out); fig_memory(rows,f,out); fig_winrate(rows,f,out); fig_asymmetry(rows,f,out)
     if "--crossover" in sys.argv:
         xdir=sys.argv[sys.argv.index("--crossover")+1]
         try: fig_crossover(xdir,f,out)
