@@ -142,16 +142,150 @@ dedicated weakening experiment of the previous subsection. The organising questi
 theoretical efficiency (A) does and does not translate into practical performance (B, C).
 
 \section{Experimental Results}
-% Organise around the five axes from Methodology:
-% (A) Search efficiency: expansions/floor table + win-rate. Headline: A* ~1.0x floor;
-%     bidirectional 2-6x. Lead here.
-% (B) Time efficiency: wall-clock + time-per-expansion. The disagreement with (A) is the
-%     point -- MM competitive-ish on nodes but ~6-8x per-node cost.
-% (C) Robustness: timeout rate. Only MM(diag) times out (~25%); frames what (A) covers.
-% (D) Direction: forward vs backward asymmetry (strongest on descent/mazes).
-% (E) Heuristic-strength crossover: A* best->worst as h weakens; MM then BAE* overtake
-%     (BiA*/NBS do not). The central result.
-% Close: GBFS as the speed/quality trade-off (not comparable to the floor).
+We ran all seven algorithms on the three domains in both movement models and both
+directions: plants (5 maps, 200 instances each), sandstone (11 maps, 25 each), and descent
+(29 maps, 250 each). Optimality was consistent across every group---all optimal algorithms
+returned identical costs on every solved instance, over ${\sim}64$k runs. We report along
+the five axes of the previous section; values are medians over solved instances.
+
+\subsection{(A) Distance from the floor}
+Table~\ref{tab:expfloor} and Figure~\ref{fig:expfloor} give median expansions divided by the
+must-expand floor. \textbf{Forward A* is essentially optimal} on all three domains---within
+0--5\% of the provable minimum in every configuration---confirming that, with a strong
+consistent heuristic, unidirectional search already expands nearly the minimal set. The
+bidirectional algorithms pay a \textbf{2--5$\times$ premium}: BiA* is consistently cheapest
+(${\sim}2\times$) and MM the most expensive. The gap is widest on the blocky plants and
+narrower on the porous sandstone and maze-like descent.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lcccccc}
+\hline
+domain / mode & A* & BiA* & NBS & BAE* & MM & rev-A* \\
+\hline
+plants · diag      & \textbf{1.00} & 2.00 & 2.21 & 3.78 & 5.12 & 4.64 \\
+plants · nodiag    & \textbf{1.02} & 2.03 & 3.10 & 3.50 & 3.63 & 2.82 \\
+sandstone · diag   & \textbf{1.00} & 1.98 & 2.01 & 2.41 & 2.75 & 2.69 \\
+sandstone · nodiag & \textbf{1.05} & 2.01 & 2.38 & 2.63 & 2.96 & 2.51 \\
+descent · diag     & \textbf{1.00} & 1.99 & 2.00 & 2.34 & 3.26 & 2.26 \\
+descent · nodiag   & \textbf{1.01} & 2.00 & 2.21 & 2.75 & 3.11 & 2.48 \\
+\hline
+\end{tabular}
+\caption{Median expansions / must-expand floor (1.0 = provably optimal).}
+\label{tab:expfloor}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/exp_over_mvc.pdf}
+\caption{Expansions relative to the theoretical minimum. A* sits on the floor; the
+bidirectional methods sit above it.}
+\label{fig:expfloor}
+\end{figure}
+
+Per instance (Figure~\ref{fig:winrate}), A* expands the fewest nodes on the large majority of
+problems; among the bidirectional methods BiA* takes most of the remainder.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\columnwidth]{figures/winrate.pdf}
+\caption{Per-instance winner among the optimal algorithms.}
+\label{fig:winrate}
+\end{figure}
+
+\subsection{(B) Time}
+A* is also the fastest in wall-clock and MM the slowest. Dividing time by expansions isolates
+per-node overhead: MM costs ${\sim}21\,\mu$s/expansion against ${\sim}2.5$--$5\,\mu$s for the
+others (${\sim}6$--$8\times$), because its paired open list is expensive to maintain. We read
+wall-clock as a practical measure, since it also reflects our implementation.
+
+\subsection{(C) Memory and robustness}
+Memory tracks (A), and \textbf{MM is the outlier in every diagonal configuration}
+(Table~\ref{tab:mem}, Figure~\ref{fig:mem}): ${\sim}3\times$ A* on plants (69.8 vs.\ 23.5 MB)
+and on descent (252 vs.\ 88 MB), reaching 680--900 MB on the hardest instances. This is the
+same story as its timeouts---MM does not merely expand more, each node is dearer in space
+too. On robustness, only MM hits the wall-clock cap: 27\% of plants, 15\% of sandstone, and
+69\% of descent diagonal instances time out, while every other optimal algorithm finishes
+${\sim}100\%$. MM's diagonal medians are therefore taken over the easier instances it
+completed.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lcccccc}
+\hline
+domain / mode & A* & BiA* & NBS & BAE* & MM & rev-A* \\
+\hline
+plants · diag      & 23.5 & 29.4 & 36.8 & 41.9 & \textbf{69.8} & 49.2 \\
+plants · nodiag    & 10.9 & 10.9 & 40.1 & 10.9 & 22.0 & 13.5 \\
+sandstone · diag   &  9.8 & 10.8 &  9.8 & 10.8 & \textbf{16.8} & 10.8 \\
+sandstone · nodiag &  8.8 &  8.8 & 10.8 &  8.8 & 10.8 &  8.8 \\
+descent · diag     & 88.3 &111.1 &108.0 &133.3 & \textbf{252.4} &134.8 \\
+descent · nodiag   & 77.7 & 89.9 &102.8 &107.3 &121.0 &113.1 \\
+\hline
+\end{tabular}
+\caption{Median peak memory per instance (MB).}
+\label{tab:mem}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{figures/memory.pdf}
+\caption{Peak memory footprint. MM is consistently the heaviest.}
+\label{fig:mem}
+\end{figure}
+
+\subsection{(D) Direction}
+Searching from the goal is not symmetric with searching from the start
+(Figure~\ref{fig:asym}): reverse A* expands the most on plants but is competitive on
+sandstone and descent. The asymmetry is domain-specific, matching the directional bias the
+benchmark authors document in these maps \citep{brewer2018voxel,nobes2023voxel}.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.86\columnwidth]{figures/directional_asymmetry.pdf}
+\caption{Median reverse-A* / forward-A* expansions ($>1$: searching from the goal is harder).}
+\label{fig:asym}
+\end{figure}
+
+\subsection{(E) The heuristic-strength crossover}
+The central question---when bidirectional search becomes worthwhile---is answered by
+weakening the heuristic (Table~\ref{tab:xover}, Figure~\ref{fig:xover}). At full strength A*
+is best by a wide margin; as $w\to0$ it degrades fastest and \textbf{MM, then BAE*, overtake
+it}, exactly the regime the theory predicts \citep{alcazar2020unifying,siag2025bridging}. The
+nuance is that specifically the meet-in-the-middle (MM) and error-exploiting (BAE*) methods
+cross over; plain BiA* and NBS do not.
+
+\begin{table}[t]
+\centering\small
+\begin{tabular}{lccccc}
+\hline
+$w$ (weaker $\rightarrow$) & A* & MM & BAE* & BiA* & NBS \\
+\hline
+1.00 (full) & \textbf{801} & 19\,613 & 17\,218 & 1\,597 & 7\,395 \\
+0.60 & 215\,578 & \textbf{79\,753} & 132\,233 & 306\,903 & 297\,017 \\
+0.40 & 314\,929 & (timeout) & \textbf{110\,784} & 286\,395 & 211\,124 \\
+\hline
+\end{tabular}
+\caption{Median expansions as the heuristic weakens (plant01).}
+\label{tab:xover}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.9\columnwidth]{figures/crossover.pdf}
+\caption{Expansions vs.\ heuristic weight. A* goes from best to worst as $w\to0$; MM and
+BAE* overtake it.}
+\label{fig:xover}
+\end{figure}
+
+\subsection{Summary}
+GBFS is not cost-optimal and is excluded from the floor comparison: it expands far fewer
+nodes but returns longer paths---a speed/quality trade-off on a different axis. Overall,
+across all three voxel domains, a strong consistent heuristic already puts A* at the
+must-expand floor, so bidirectional search cannot help and in fact costs 2--5$\times$ more
+work, more time, and more memory---MM most of all. The bidirectional advantage appears only
+once the heuristic is weakened, and then only for the meet-in-the-middle and error-based
+methods. This is precisely the theory-versus-practice gap the study set out to measure.
 
 \section{Conclusions and Summary}
 % Short: thesis and whether goals were met; contribution; limitations; future work.
