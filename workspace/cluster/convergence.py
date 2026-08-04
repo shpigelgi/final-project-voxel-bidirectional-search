@@ -29,6 +29,7 @@ def main():
     path = sys.argv[1]
     target = float(sys.argv[2]) if len(sys.argv) > 2 else 3.0
     n_boot = int(sys.argv[3]) if len(sys.argv) > 3 else 2000
+    MIN_N = int(sys.argv[4]) if len(sys.argv) > 4 else 50   # never declare "converged" below this
     OPT = {"astar","rastar","mm","bia","bae","nbs"}
 
     ratios = defaultdict(list)      # (family,config,alg) -> [exp/mvc over ok]
@@ -47,7 +48,10 @@ def main():
         med = st.median(vals)
         lo, hi = boot_ci(vals, n_boot)
         rel = 100*(hi-lo)/2/med if med > 0 else 0.0
-        groups[(fam,cfg)][alg] = (med, rel, len(vals), rel <= target)
+        # min-n guard: a tiny sample of atom-heavy exp/floor values (many exact 1.0s)
+        # yields a degenerate CI of width 0, which would falsely read as converged.
+        conv = (rel <= target) and (len(vals) >= MIN_N)
+        groups[(fam,cfg)][alg] = (med, rel, len(vals), conv)
 
     print(f"{'family':18}{'cfg':7}{'alg':7}{'n_ok':>6}{'median':>9}{'relCI%':>8}  conv")
     need = []

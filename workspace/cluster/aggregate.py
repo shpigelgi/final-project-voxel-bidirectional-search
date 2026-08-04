@@ -104,7 +104,7 @@ def main():
     # ---- cross-algorithm optimality consistency (per instance the optimal algos must agree) ----
     # This is the optimality check for BOTH modes; in nodiag it is the ONLY check, since the
     # scenario's optimal cost does not apply there.
-    OPT_ALGS = {"astar", "rastar", "mm", "bae", "nbs"}
+    OPT_ALGS = {"astar", "rastar", "mm", "bae", "nbs", "bia"}
     per_inst = defaultdict(dict)  # (family,map,config,instance) -> {alg: cost}
     for r in long_rows:
         if r["alg"] in OPT_ALGS and r["status"] == "ok":
