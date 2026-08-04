@@ -37,9 +37,14 @@ done
 
 # 3. Submit, mode-split memory (nodiag is light; diag is where MM's footprint blows up).
 export ROOT="$WS" TIMEOUT=60 ALGS=astar,rastar,mm,bia,bae,nbs,gbfs LIMIT="$CHUNK"
-export MANIFEST="$CLUSTER_DIR/manifest.conv.nodiag.tsv" MEMMB=1800
+# NOTE on the memory caps: MEMMB is an RLIMIT_AS (virtual) cap. An initial nodiag
+# cap of 1800 MB was sized from an easy-sample RSS and turned out too tight on the
+# representative sample (bad_alloc -> SIGABRT, mislabeled 'error'; ~767 hits, mostly
+# descent-nodiag), while diag at 7000 had none. Sized up to 4000 MB from the
+# representative peaks. RSS understates need because RLIMIT_AS bounds virtual, not RSS.
+export MANIFEST="$CLUSTER_DIR/manifest.conv.nodiag.tsv" MEMMB=4000
 NN=$(wc -l < "$MANIFEST" | tr -d ' ')
-sbatch --parsable --array="1-${NN}%150" --export=ALL --partition=cpu --mem=2G --time=12:00:00 \
+sbatch --parsable --array="1-${NN}%150" --export=ALL --partition=cpu --mem=5G --time=12:00:00 \
   --job-name=vox-conv-nd "$CLUSTER_DIR/run_array.sbatch"
 export MANIFEST="$CLUSTER_DIR/manifest.conv.diag.tsv" MEMMB=7000
 ND=$(wc -l < "$MANIFEST" | tr -d ' ')
