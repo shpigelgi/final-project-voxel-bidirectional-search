@@ -124,6 +124,20 @@ def main():
         fam, cfg = key
         print(f"  {fam}/{cfg}: {checked[key]-disagree[key]}/{checked[key]} consistent"
               + (f"  ** {disagree[key]} DISAGREEMENTS **" if disagree[key] else ""))
+
+    # ---- MVC=0 instances: excluded from exp/floor (can't divide by zero). MVC=0 iff no
+    # forward node has f<C*, i.e. the heuristic is exact from the start (h(s)=C*); these are
+    # heuristic-exact instances, NOT merely short ones. Report the counts so the exclusion
+    # (and the bias it introduces toward heuristic-inexact instances) is explicit.
+    mvc0 = defaultdict(set); allinst = defaultdict(set)
+    for r in long_rows:
+        key = (r["family"], r["config"]); allinst[key].add(r["map"] + ":" + str(r["instance"]))
+        if r["mvc"] == 0:
+            mvc0[key].add(r["map"] + ":" + str(r["instance"]))
+    print("\nMVC=0 (heuristic-exact) instances, excluded from exp/floor:")
+    for key in sorted(allinst):
+        fam, cfg = key; n0 = len(mvc0[key]); nt = len(allinst[key])
+        print(f"  {fam}/{cfg}: {n0}/{nt} ({100*n0/nt:.0f}%)")
     # Console preview
     print("\nfamily/config/alg            n   %ok  %to  mean_exp   exp/MVC(med)")
     for s in summ:
