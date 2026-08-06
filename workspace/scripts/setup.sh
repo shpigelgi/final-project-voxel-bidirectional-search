@@ -19,3 +19,4 @@ fi
 echo
 echo "Done. HOG2 is at: $HOG2_DIR"
 echo "Next: run scripts/fetch-benchmarks.sh to download the Warthog voxel maps."
+python3 "$(dirname "$0")/../hog2-patches/add_bae_nipped.py" 2>/dev/null || true   # nodesNipped counter for the floor diagnostic
