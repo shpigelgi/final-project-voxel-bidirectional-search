@@ -1,128 +1,113 @@
 # Cluster benchmark results (representative sample)
 
-Produced on the **BGU HPC** cluster. Three domains (industrial plants, sandstone,
-descent), both movement models, all seven algorithms, both directions. Evaluated along
-five axes: **(A)** search efficiency vs. the must-expand floor, **(B)** time, **(C)**
-memory, **(D)** direction, **(E)** heuristic-strength crossover.
+Three domains (industrial plants, sandstone, descent), both movement models, all seven
+algorithms, both directions, on a seeded-shuffle representative sample with a bootstrap-median
+±3% CI stopping rule (see `convergence_report.txt`). Per-instance data: `combined_long.csv`
+(384,227 rows). Metric medians: `summary.csv`.
 
-## Sampling and convergence (important — read first)
-The benchmark scenario files are **difficulty-graded**, so a contiguous first-N prefix is a
-biased (easy) sample. We therefore **shuffled each map's instances with a fixed seed** and
-sampled representatively, running each (family, mode, algorithm) group until its **median
-exp/floor had a bootstrap 95% CI within ±3%**, or the instance budget was exhausted.
+## Reading the floor axis correctly (important)
+Axis A compares node expansions to the **must-expand lower bound** — the MVC of the
+must-expand graph under the pairwise condition `g_F(u)+g_B(v) < C*` (Shaham et al. 2017/2018).
+**This bound is valid but not tight.** It is the bound implied by *summed* g-values; front-to-end
+algorithms that exploit individual f-bounds can expand fewer nodes than it
+(\citealt{alcazar2020unifying}). Empirically:
+- **A\*** attains the bound exactly — it expands the full forward `f<C*` contour, which equals
+  the bound's all-forward cover (verified: 0 of 27,218 diagonal A* instances below 1.0).
+- **The bidirectional algorithms dip below it** on the harder instances, by a little to a lot
+  (down to ~0.04× in extreme cases). This is *not* "better than optimal": it means the pairwise
+  bound is loose for those algorithms/instances. We confirmed this directly — e.g. plant02-diag
+  inst 1886: BiA* is optimal and processes 89,061 nodes (incl. nips) against a computed floor of
+  199,454, so the true minimum is ≤ 89k and the floor over-states it ~2×.
 
-Convergence status (final):
-- **Fully converged (all algorithms, CI <2%):** descent-nodiag, sandstone-nodiag.
-- **All non-MM algorithms converged; MM capped:** plants-diag, descent-diag, sandstone-diag.
-  MM times out on 77–98% of diagonal instances, so its median is over the small survivorship
-  set it solves; it cannot reach ±3% and is reported with its (wider) CI.
-- **plants-nodiag:** A*/BiA*/BAE* converged; NBS/rev-A*/MM are heavy-tailed (CI 8–11%) and
-  reported with their CIs. (This mode has ~83% MVC=0 instances — see below — leaving fewer
-  usable ones.) Median exp/floor per (family, mode, algorithm) is in `summary.csv`; the
-  per-group CIs are in `convergence_report.txt`.
+So **read `exp/floor` as distance from this specific pairwise bound, not from the per-instance
+optimum**: values > 1 quantify avoidable work relative to the bound; values < 1 show the bound is
+not tight for that algorithm. A tight bound would need the full individual-bounds machinery
+(future work). We did **not** claim, and the data does not support, that any algorithm beats the
+optimum.
 
-Per-instance sample sizes: descent ~500/map, sandstone ~500/map, plants ~1500/map (diag)
-and 1500/map (nodiag). Full per-instance data: `combined_long.csv`.
-
-## Correctness
-Optimality consistency: the optimal algorithms (A*, reverse A*, MM, BiA*, BAE*, NBS) return
-identical costs on every solved instance across all groups. No wrong-cost results.
-
-## (A) Expansions vs. the floor (median exp/MVC; 1.0 = the f-based must-expand minimum)
+## (A) Expansions vs. the (pairwise) floor — median exp/MVC
 
 | domain / mode | A* | BiA* | NBS | BAE* | MM | rev-A* |
 |---|--:|--:|--:|--:|--:|--:|
 | plants · diag      | **1.00** | 1.62 | 1.69 | 1.57 | 3.39† | 1.73 |
-| plants · nodiag    | **1.06** | 2.03 | 3.41 | 3.62 | 4.60 | 3.04 |
-| sandstone · diag   | **1.00** | 1.54 | 1.66 | **0.95** | 2.63† | 1.35 |
+| plants · nodiag    | **1.06** | 2.03 | 3.41‡ | 3.62 | 4.60‡ | 3.04‡ |
+| sandstone · diag   | **1.00** | 1.54 | 1.66 | 0.95 | 2.63† | 1.35 |
 | sandstone · nodiag | **1.00** | 1.73 | 1.56 | 1.25 | 1.63 | 1.58 |
 | descent · diag     | **1.00** | 1.63 | 1.58 | 1.47 | 2.74† | 1.38 |
 | descent · nodiag   | **1.00** | 1.78 | 1.72 | 1.72 | 1.84 | 1.47 |
 
-† MM median is over solved instances only; MM times out on most diagonal instances (see C).
+† MM median over solved instances only — MM times out on most diagonal instances (see C).
+‡ Did not reach ±3% CI (heavy-tailed / timeout-limited); reported with wider CI, see
+`convergence_report.txt`. plants-nodiag has ~83% MVC=0 exclusions, leaving few usable instances.
 
-**Findings.**
-- **A\* sits exactly at the floor** (1.00–1.06×) in every configuration. Note the floor is a
-  bound for *front-to-end* algorithms; A* is unidirectional and lands on it here.
-- **The "bidirectional pays a large premium" story is a biased-sample artifact.** On the
-  representative sample the bidirectional algorithms are only ~1.4–1.8× the floor on
-  diagonal maps — not the 2–6× the earlier easy-biased sample showed.
-- **Some algorithms report exp/floor < 1.0. There are two distinct causes — one real, one a
-  counting convention — and we verified which is which** (diagnostic: instrumented node
-  counters, see `floor_below_diagnostic.md`).
-  - **BAE\* genuinely expands below the f-based floor** — 0.95× on sandstone-diag (56% of
-    instances below 1.0, all provably optimal, some as low as 0.24×). This is real: on the
-    sub-floor instances BAE* performs **zero nips**, yet expands fewer nodes than the floor.
-    BAE* uses the distance-error term `d` (priority `b = f + d`), i.e. information the f-based
-    floor does not model, so it can legitimately beat that bound \citep{alcazar2020unifying}.
-  - **BiA\* (and NBS) only *appear* below the floor, and rarely — it is a node-counting
-    convention.** HOG2 does not count "nipped" nodes (nodes closed because already closed on
-    the opposite frontier) as expansions, while the floor counts them. On BiA*'s sub-floor
-    instances, **expanded + nipped ≥ floor** once the nips are counted (verified), so BiA*
-    does *not* actually beat the bound. NBS closes-and-prunes nodes by the incumbent without
-    counting them (same category; confirmed by code, not separately instrumented).
-  - The `nip = 0` vs `nip > 0` distinction is the discriminator: BAE*'s sub-floor is a real
-    effect, BiA*/NBS's is an artifact of not counting nipped nodes. **A\* attains the floor
-    exactly (0 violations); the floor is a valid lower bound for the f-based algorithms once
-    nipped nodes are counted, and BAE* is the one method that legitimately goes below it.**
+**Findings.** A* sits at the bound; the bidirectional algorithms are mostly ~1.4–1.8× on diagonal
+maps (BAE* lowest, sometimes below the bound). The old easy-biased sample inflated this to
+2–6×; representative sampling both softens the premium and exposes the bound's looseness. Note
+the bidirectional medians are over *solved* instances and those algorithms have non-trivial
+diagonal timeout rates (below), so their medians are mildly optimistic (survivorship) — this
+applies to BAE* too, not only MM.
 
 ## (C) Memory (median peak MB) and robustness
 
-| domain / mode | A* | BiA* | NBS | BAE* | MM | rev-A* | MM timeout |
-|---|--:|--:|--:|--:|--:|--:|--:|
-| plants · diag      |  97 | 110 | 107 | 104 | 241 | 184 | **77.0%** |
-| plants · nodiag    |  11 |  11 | 104 |  11 |  42 |  14 | 0% |
-| sandstone · diag   | 181 | 208 | 193 | 152 |  28‡ | 207 | **97.9%** |
-| sandstone · nodiag | 101 | 143 | 127 |  97 | 148 | 181 | 0% |
-| descent · diag     | 368 | 411 | 364 | 407 | 379 | 430 | **94.4%** |
-| descent · nodiag   | 270 | 364 | 319 | 359 | 411 | 403 | 0% |
+| domain / mode | A* | BiA* | NBS | BAE* | MM | rev-A* |
+|---|--:|--:|--:|--:|--:|--:|
+| plants · diag      |  96.8 | 110.2 | 107.3 | 103.6 | 240.6 | 184.3 |
+| plants · nodiag    |  11.4 |  11.4 | 104.1 |  11.4 |  42.3 |  13.6 |
+| sandstone · diag   | 181.1 | 208.1 | 193.3 | **152.4** |  28.0§ | 207.0 |
+| sandstone · nodiag | 101.3 | 143.3 | 127.1 | **96.8** | 147.8 | 181.3 |
+| descent · diag     | 368.4 | 410.6 | **363.7** | 407.2 | 378.5 | 430.1 |
+| descent · nodiag   | **270.5** | 364.4 | 318.6 | 359.4 | 410.7 | 403.0 |
 
-‡ MM's low sandstone-diag memory is survivorship — it only solves the ~2% easiest instances.
+§ MM's low sandstone-diag memory is survivorship (it only solves the ~2% easiest instances).
+A* is the lightest in most groups but **not all** (descent-diag NBS < A*; sandstone BAE* < A*).
+**Memory-exhaustion (`fail`) rate is 0 in every group** — no run hit the address-space cap.
 
-**Robustness / timeouts.** Only MM hits the wall-clock cap, and on the representative sample
-its diagonal timeout rate is severe: **77% (plants), 98% (sandstone), 94% (descent)** — far
-higher than the easy-biased sample suggested. Every other optimal algorithm completes ~100%.
-NBS is the memory outlier on plants-nodiag (104 MB vs ~11 MB), consistent with its heavy tail
-there.
+**Robustness / timeouts.** "Only MM times out" is **false** — correcting an earlier claim.
+Overall timeout rate by algorithm: **MM 45.1%, BAE* 1.28%, NBS 1.21%, BiA* 0.91%, rev-A* 0.60%,
+A* 0.08%.** It concentrates on diagonal maps; on **descent-diag: MM 94%, BAE* 4.6%, BiA* 3.2%,
+NBS 3.1%, rev-A* 2.0%, A* 0.3%.** So MM dominates but is not alone, and BAE*'s sub-floor result is
+computed with its hardest ~4.6% of descent-diag instances removed.
 
 ## (B) Time
-A* is fastest; MM slowest per node. The 60s timeout is not load-bearing: across 188k solved
-runs the p99 wall time is 28.5s and p99.9 is 44s, with only 0.01% of solved runs finishing
-within 5s of the cap — the distribution is bimodal (solve fast or blow up).
+A* fastest; MM slowest per node. Across **302,358** solved runs the wall-time distribution is:
+median 3.0 s, p99 **38.4 s**, p99.9 **54.3 s**; **0.078%** (235 runs) finish within 5 s of the
+60 s cap. So the cap is ~1.6× the p99 (not 2×, correcting an earlier figure), and few solved runs
+are near it — but this is over *solved* runs by construction, so it bounds the budget from below,
+not a bimodality claim.
 
 ## (D) Direction
-Reverse A* differs from forward A* by domain (see `figures/directional_asymmetry.pdf`);
-the asymmetry matches the directional bias the benchmark authors document.
+Reverse vs. forward A* differs by domain (`figures/directional_asymmetry.pdf`). Caveat: the
+plants-nodiag rev-A* figure (3.04) did **not** converge to ±3% (heavy-tailed); treat it as
+indicative.
 
-## (E) Heuristic-strength crossover (representative; retracts the old n=6 result)
-Weight sweep `h' = w·h` over w ∈ {1.0,0.8,0.6,0.5,0.4}, one map per family, 80 shuffled
-instances, 300s timeout, raw median expansions. BAE*/A* ratio (<1 = BAE* wins):
+## (E) Heuristic-strength crossover — raw expansions (unaffected by the floor issue)
+This axis uses **raw median expansions**, not exp/floor, so it is independent of the floor's
+looseness. Diagonal (26-connected) mode. Weight sweep `h'=w·h`, one map per family, 80 shuffled
+instances, 300 s timeout. BAE*/A* ratio (<1 = BAE* fewer):
 
-| domain | w=1.0 | w=0.8 | w=0.6 | w=0.5 | w=0.4 | MM solved (<w=1.0) |
+| domain | w=1.0 | w=0.8 | w=0.6 | w=0.5 | w=0.4 | MM solved (<w=1) |
 |---|--:|--:|--:|--:|--:|---|
 | plants    | 0.88 | 0.68 | 0.61 | 0.60 | 0.58 | 1–2/80 |
 | sandstone | 0.90 | 0.60 | 0.53 | 0.51 | 0.50 | 2–3/80 |
 | descent   | 1.58 | 1.19 | 1.11 | 1.09 | 1.07 | 0/80 |
 
-- **BAE\* gains on A\* as the heuristic weakens in every domain** (ratio drops monotonically).
-- It **overtakes** A* on plants and sandstone; on descent (mazes) it converges toward A* but
-  does not overtake in range.
-- **MM collapses** (0–3/80 solved below full strength). Sensitivity check: at **5× the budget
-  (300s)**, MM still solves only 0–2% on sandstone/descent — its timeouts are **intrinsic**,
-  not a 60s artifact. BAE* solves 100% at every weight.
-- BiA*/NBS never overtake A*.
+BAE* increasingly beats A* as the heuristic weakens (overtaking on plants+sandstone, converging
+toward it on descent). MM collapses (0–3/80 solved below full strength); sensitivity confirms
+intrinsic (still 0–2% at 5× budget). BiA*/NBS never overtake. Full breakdown +
+per-instance data: `../crossover/`.
 
-See `crossover/crossover_results.md` for the full breakdown, `figures/crossover.pdf`.
+## GBFS (speed/quality reference, not floor-comparable)
+GBFS is not cost-optimal: median cost/C* = **1.337** (paths ~34% longer), median **27,655**
+expansions. Reported as a speed/quality trade-off, excluded from the floor tables.
 
-## MVC=0 (heuristic-exact) instances, excluded from exp/floor
-MVC=0 iff h(s)=C* (the heuristic is exact from the start), so these are heuristic-exact
-instances, not short ones. Excluding them biases exp/floor toward heuristic-inexact instances.
-Fractions are large on open maps (plants-nodiag ~83%), small on cluttered/diagonal ones. Exact
-per-group counts: run `aggregate.py` (printed to stdout).
-
-## Caveats
-- MM (all diagonal) and plants-nodiag NBS/rev-A* did not reach ±3% CI within the instance
-  budget (timeout-limited and heavy-tailed respectively); they are reported with their CIs.
-- Crossover is one map per family — a cross-domain demonstration, not a full-family sweep.
-- Validation counts (~1.8M successors / ~58k edges, 0 illegal) are from an earlier subset and
-  not refreshed on the representative sample; the 0-illegal legality conclusion is unaffected.
+## Sample sizes, exclusions, and gaps
+- Instances/map: descent ~500, sandstone ~500, plants ~1500 (both modes). Full data in
+  `combined_long.csv`; per-group MVC=0 counts in `mvc0_counts.csv` (plants-nodiag 83.4% — these
+  are heuristic-exact, h(s)=C*, excluded from exp/floor).
+- **106 descent-diag instances are missing** (level10 429/500, level16 465/500): those chunks hit
+  the 12 h node wall (TIMEOUT at task level), so a slice of the hardest instances is absent for
+  all algorithms. Descent-diag n is therefore 14,394, not 14,500.
+- The four `NEED_EXTEND` groups stopped at round 1 / 1500-per-map, not because a budget ran out;
+  their unconverged cells are heavy-tailed and might converge with more instances.
+- Validation counts (~1.8M successors / ~58k edges, 0 illegal) are from an earlier subset, not
+  refreshed; the 0-illegal legality conclusion is unaffected.

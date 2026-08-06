@@ -1,47 +1,47 @@
-# Why some algorithms report exp/floor < 1.0 — resolved
+# Why some algorithms report exp/floor < 1.0 — resolved (corrected)
 
 An independent review flagged that RESULTS.md claimed the must-expand floor is a valid lower
-bound for A*, BiA*, NBS, MM, but the data showed BiA* below the floor on ~232 diagonal
-instances (min 0.080) and NBS on ~111 (min 0.377) — which would undercut the BAE* story
-(if pure f=g+h BiA* also beats the f-floor, "BAE* uses d" no longer distinguishes it).
+bound for A*, BiA*, NBS, MM, while the data showed BiA*, NBS, and BAE* all below it on some
+instances. This note records the investigation and its **corrected** conclusion. (An earlier
+version of this note wrongly concluded "BiA* = uncounted nipping, BAE* = real d-term"; that held
+only for near-threshold instances and is retracted.)
 
-## Diagnostic
-We instrumented both bidirectional implementations with a `nodesNipped` counter — nodes that
-are `Close()`d because they are already closed on the opposite frontier ("lazy nipping"),
-which HOG2 removes from open but does **not** count as expansions. Added to `BiAStar.h`
-(ours) and `hog2/generic/BAE.h`; the driver emits a `nipped` column. Re-ran locally on hard
-plant01 diagonal instances (the file is difficulty-graded, so sub-floor cases only appear on
-hard instances) and checked whether `expanded + nipped ≥ MVC`.
+## What we tested
+Instrumented a `nodesNipped` counter in BiAStar.h and hog2/generic/BAE.h (nodes closed because
+already closed on the opposite frontier — removed from open but not counted as expansions), had
+the driver emit a `nipped` column, rebuilt, and checked `expanded + nipped` vs. the computed MVC
+on hard diagonal instances.
 
-## Result — two distinct causes
+## Findings
+- **Near-threshold cases (exp/floor ≈ 0.95–1.0):** BiA* nips 11k–22k nodes and
+  `expanded + nipped ≥ MVC` — a counting convention, consistent with the floor.
+- **Extreme cases falsify that explanation.** plant02-diag inst 1886: BiA* is optimal, expands
+  85,917, nips only 3,144 → 89,061 total, against a computed floor of **199,454** (ratio 0.447).
+  Counting nips does not close a 2× gap. Since an optimal front-to-end algorithm's expanded set is
+  a valid vertex cover, the **true MVC ≤ ~89k, so the computed floor over-states it ~2×** here.
+- BAE* sub-floor instances have nip = 0 yet expand well below the floor — same phenomenon, not a
+  separate d-term effect distinguishable from bound-looseness.
 
-**BAE\* sub-floor is REAL.** On 31/31 sub-floor BAE* instances, **nip = 0** — BAE* expands
-~57–89k nodes against a floor of ~100k with zero nips (ratios 0.57–0.88). Counting nips
-changes nothing; BAE* genuinely expands below the f-based floor. Mechanism: `b = f + d` uses
-the distance-error term the f-based must-expand bound does not model (Alcázar 2020). This is
-a legitimate, interesting result.
+## Root cause: the pairwise floor is loose, not a coding bug
+The threshold scan in `mvc.cpp` is correct (skipping duplicate g-values is valid), and the graph
+`u~v iff g_F(u)+g_B(v) < C*` is a chain graph, so the threshold form equals the true MVC **of
+that graph** (König). The looseness is in the **bound/graph itself**: the pairwise summed-g
+condition over-counts what a front-to-end algorithm using individual f-bounds actually needs.
+This is the individual-bounds gap of \citealt{alcazar2020unifying}. On inst 1886 the MVC equals
+the all-forward extreme (`MVC = fwd_cand = 199,454`); A* attains it, the bidirectional algorithms
+beat it because the pairwise bound is not tight.
 
-**BiA\* sub-floor is a COUNTING CONVENTION.** BiA* nips heavily (11k–22k nips/instance). Its
-sub-floor instances have `expanded < MVC` but **`expanded + nipped ≥ MVC`** once nips are
-counted (e.g. inst 1502: exp 107,311 + nip 11,717 = 119,028 ≥ MVC 109,499). So BiA* does not
-actually beat the bound — HOG2 just doesn't count nipped nodes as expansions.
-
-**NBS:** `NBS.h` closes-and-prunes nodes by the incumbent cost without counting them (Expand,
-the `f ≥ currentCost` early return before `nodesExpanded++`). Same category as BiA* (closed
-but uncounted); confirmed by code inspection, not separately instrumented — its sub-floor
-instances are on descent-diag (heavy to reproduce locally).
-
-## Conclusion
-- **A\*** attains the floor exactly (0 violations across 27,218 diagonal instances).
-- The floor is a valid lower bound for the **f-based algorithms** (A*, BiA*, NBS, MM) once
-  nipped/pruned-but-uncounted nodes are counted; BiA*/NBS never truly beat it.
-- **BAE\*** legitimately expands below the f-based floor (nip = 0), by exploiting `d`.
-- The **`nip = 0` vs `nip > 0`** distinction is the discriminator the review asked for.
+## Consequence
+`exp/floor < 1.0` means "below this specific pairwise lower bound," **not** "below the optimum."
+A* attains the bound; BiA*/NBS/BAE* dip below it where the bound is loose. RESULTS.md axis A is
+framed accordingly. A tight per-instance bound would require the full individual-bounds/MEP
+machinery — future work, not a patch.
 
 ## Reproduce
 ```
-./src/build.sh /tmp/vb          # driver now emits a `nipped` column for bia/bae
-/tmp/vb/mvc  <map> <scen> --start 1400 --limit 50 > mvc.csv
-/tmp/vb/voxdriver <map> <scen> --start 1400 --limit 50 --algs astar,bia,bae > exp.csv
-# join on instance; for each bia/bae row with expanded<mvc, check expanded+nipped vs mvc.
+./src/build.sh /tmp/vb   # driver emits a `nipped` column for bia/bae; needs hog2-patches/add_bae_nipped.py
+/tmp/vb/mvc <map> <scen> --start 1850 --limit 90 > mvc.csv
+/tmp/vb/voxdriver <map> <scen> --start 1850 --limit 90 --algs astar,bia,bae > exp.csv
+# join on instance; for bia rows with expanded<mvc, check expanded+nipped vs mvc.
+# plant02 hard tail contains the extreme (e.g. inst 1886).
 ```
