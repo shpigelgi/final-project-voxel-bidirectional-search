@@ -4,6 +4,10 @@
 on a single solved MM instance and is retracted.
 
 ## Method
+Connectivity: **diagonal (26-connected)** with octile costs. Metric is **raw median
+expansions** (NOT exp/floor), so this axis is independent of the floor-tightness issue that
+affects axis A. Per-instance data: `representative/*.exp.csv` (and `.mvc.csv`).
+
 Weight knob `h' = w·h`, swept over w ∈ {1.0, 0.8, 0.6, 0.5, 0.4}. One map per family
 (plant01 / industrial, Parker / sandstone, level20 / descent), **80 shuffled
 (representative) instances each**, per-instance timeout **300 s**. Metric is **raw median
