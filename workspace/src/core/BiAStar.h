@@ -54,8 +54,9 @@ public:
 	}
 
 	virtual const char *GetName() { return "BiAStar"; }
-	void ResetNodeCount() { nodesExpanded = nodesTouched = 0; }
+	void ResetNodeCount() { nodesExpanded = nodesTouched = nodesNipped = 0; }
 	uint64_t GetNodesExpanded() const { return nodesExpanded; }
+	uint64_t GetNodesNipped() const { return nodesNipped; }
 	uint64_t GetNodesTouched() const { return nodesTouched; }
 
 	// Inspection (used by the trace tool). The node's .h field holds its priority (the f-value).
@@ -128,6 +129,7 @@ private:
 			uint64_t revLoc;
 			auto loc = opposite.Lookup(env->GetStateHash(current.Lookup(nextID).data), revLoc);
 			if (loc != kClosedList) { success = true; break; }
+			nodesNipped++;   // this Closed node was already closed on the opposite side: nipped, not expanded
 		}
 		if (!success) return;
 		nodesExpanded++;
@@ -175,7 +177,7 @@ private:
 
 	priorityQueue forwardQueue, backwardQueue;
 	state start, goal, middleNode;
-	uint64_t nodesExpanded, nodesTouched;
+	uint64_t nodesExpanded, nodesTouched, nodesNipped = 0;
 	double currentCost;
 	std::vector<state> neighbors;
 	environment *env;

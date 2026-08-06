@@ -47,12 +47,24 @@ identical costs on every solved instance across all groups. No wrong-cost result
 - **The "bidirectional pays a large premium" story is a biased-sample artifact.** On the
   representative sample the bidirectional algorithms are only ~1.4–1.8× the floor on
   diagonal maps — not the 2–6× the earlier easy-biased sample showed.
-- **BAE\* goes *below* the f-based floor** — 0.95× on sandstone-diag (56% of instances below
-  1.0, all provably optimal, some as low as 0.24×). This is not an error: BAE* uses the
-  distance-error term `d` (priority `b = f + d`), i.e. more information than the f-based
-  floor models, so it can legitimately expand fewer nodes than that bound
-  \citep{alcazar2020unifying}. The floor is a valid lower bound for the f-based algorithms
-  (A*, BiA*, NBS, MM), not for BAE*.
+- **Some algorithms report exp/floor < 1.0. There are two distinct causes — one real, one a
+  counting convention — and we verified which is which** (diagnostic: instrumented node
+  counters, see `floor_below_diagnostic.md`).
+  - **BAE\* genuinely expands below the f-based floor** — 0.95× on sandstone-diag (56% of
+    instances below 1.0, all provably optimal, some as low as 0.24×). This is real: on the
+    sub-floor instances BAE* performs **zero nips**, yet expands fewer nodes than the floor.
+    BAE* uses the distance-error term `d` (priority `b = f + d`), i.e. information the f-based
+    floor does not model, so it can legitimately beat that bound \citep{alcazar2020unifying}.
+  - **BiA\* (and NBS) only *appear* below the floor, and rarely — it is a node-counting
+    convention.** HOG2 does not count "nipped" nodes (nodes closed because already closed on
+    the opposite frontier) as expansions, while the floor counts them. On BiA*'s sub-floor
+    instances, **expanded + nipped ≥ floor** once the nips are counted (verified), so BiA*
+    does *not* actually beat the bound. NBS closes-and-prunes nodes by the incumbent without
+    counting them (same category; confirmed by code, not separately instrumented).
+  - The `nip = 0` vs `nip > 0` distinction is the discriminator: BAE*'s sub-floor is a real
+    effect, BiA*/NBS's is an artifact of not counting nipped nodes. **A\* attains the floor
+    exactly (0 violations); the floor is a valid lower bound for the f-based algorithms once
+    nipped nodes are counted, and BAE* is the one method that legitimately goes below it.**
 
 ## (C) Memory (median peak MB) and robustness
 

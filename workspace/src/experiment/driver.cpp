@@ -76,7 +76,7 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 	double opt = in.optimal;
 	std::vector<voxState> path, bpath;
 	Timer t;
-	uint64_t expanded = 0, generated = 0;
+	uint64_t expanded = 0, generated = 0, nipped = 0;
 	double cost = 0;
 	bool haveCost = true, optimalExpected = true;
 
@@ -96,7 +96,7 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 		// gcd=1e-6 disables the invalid gcd round-up for incommensurable {1,sqrt2,sqrt3} costs.
 		BAE<voxState, voxAction, VoxelMap> a(true, 1.0, 1e-6);
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
-		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); cost = env.GetPathLength(path);
+		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); nipped = a.GetNodesNipped(); cost = env.GetPathLength(path);
 	} else if (alg == "nbs") {
 		NBS<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
@@ -104,7 +104,7 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 	} else if (alg == "bia") {
 		BiAStar<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
-		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); cost = env.GetPathLength(path);
+		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); nipped = a.GetNodesNipped(); cost = env.GetPathLength(path);
 	} else if (alg == "gbfs") {
 		BidirectionalGreedyBestFirst<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, path, bpath); t.EndTimer();
@@ -123,10 +123,10 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 	else                                                          status = "subopt";
 
 	struct rusage ru; getrusage(RUSAGE_SELF, &ru);
-	printf("%s,%d,%s,%llu,%llu,%.6f,%.6f,%.3f,%s,%.1f\n",
+	printf("%s,%d,%s,%llu,%llu,%.6f,%.6f,%.3f,%s,%.1f,%llu\n",
 		   tag, idx, alg.c_str(),
 		   (unsigned long long)expanded, (unsigned long long)generated,
-		   cost, opt, t.GetElapsedTime() * 1000.0, status, peakRSSmb(ru.ru_maxrss));
+		   cost, opt, t.GetElapsedTime() * 1000.0, status, peakRSSmb(ru.ru_maxrss), (unsigned long long)nipped);
 	fflush(stdout);
 }
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "Loaded %zu instances (map v%d %s, tag='%s', timeout=%.0fs, mem=%ldMB)\n",
 			instances.size(), version, mapname, tag.c_str(), timeoutSec, memMB);
 
-	printf("tag,instance,alg,expanded,generated,cost,optimal,time_ms,status,peak_mb\n");
+	printf("tag,instance,alg,expanded,generated,cost,optimal,time_ms,status,peak_mb,nipped\n");
 	fflush(stdout);
 
 	int last = std::min((int)instances.size(), startIdx + limit);
@@ -225,15 +225,15 @@ int main(int argc, char *argv[])
 			// For these rows peak_mb is the killed/failed child's peak RSS (via wait4).
 			double peak = peakRSSmb(ru.ru_maxrss);
 			if (killed) {
-				printf("%s,%d,%s,0,0,0,%.6f,%.3f,timeout,%.1f\n",
+				printf("%s,%d,%s,0,0,0,%.6f,%.3f,timeout,%.1f,0\n",
 					   tag.c_str(), i, alg.c_str(), instances[i].optimal, timeoutSec * 1000.0, peak);
 				fflush(stdout);
 			} else if (WIFSIGNALED(status)) {
 				const char *st = (WTERMSIG(status) == SIGKILL) ? "oom" : "error";
-				printf("%s,%d,%s,0,0,0,%.6f,0,%s,%.1f\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, st, peak);
+				printf("%s,%d,%s,0,0,0,%.6f,0,%s,%.1f,0\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, st, peak);
 				fflush(stdout);
 			} else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-				printf("%s,%d,%s,0,0,0,%.6f,0,error,%.1f\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, peak);
+				printf("%s,%d,%s,0,0,0,%.6f,0,error,%.1f,0\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, peak);
 				fflush(stdout);
 			}
 		}
