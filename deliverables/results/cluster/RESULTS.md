@@ -1,94 +1,116 @@
-# Cluster benchmark results
+# Cluster benchmark results (representative sample)
 
-Produced on the **BGU HPC** Slurm cluster (`cpu` partition). Three domains
-(industrial plants, sandstone, descent), both movement models, all seven algorithms,
-run in both directions. We evaluate along the axes set out in the report methodology:
-**(A)** search efficiency vs. the must-expand floor, **(B)** time, **(C)** memory,
-**(D)** direction, and **(E)** the heuristic-strength crossover.
+Produced on the **BGU HPC** cluster. Three domains (industrial plants, sandstone,
+descent), both movement models, all seven algorithms, both directions. Evaluated along
+five axes: **(A)** search efficiency vs. the must-expand floor, **(B)** time, **(C)**
+memory, **(D)** direction, **(E)** heuristic-strength crossover.
 
-Metric of record for (A) is **node expansions relative to the per-instance must-expand
-floor** (MVC), reported as the **median `exp/MVC`** (robust to trivial `MVC=0` instances
-and to a heavy tail that skews the mean). Full data: `combined_long.csv`; per-group:
-`summary.csv`.
+## Sampling and convergence (important — read first)
+The benchmark scenario files are **difficulty-graded**, so a contiguous first-N prefix is a
+biased (easy) sample. We therefore **shuffled each map's instances with a fixed seed** and
+sampled representatively, running each (family, mode, algorithm) group until its **median
+exp/floor had a bootstrap 95% CI within ±3%**, or the instance budget was exhausted.
 
-Run config: plants `LIMIT=200`, sandstone `LIMIT=25`, descent `LIMIT=250`, per-instance
-timeout 60 s, 8 GB/child, 1 CPU/task. Peak resident memory (`peak_mb`) is logged per run
-for all three domains. Descent diag maps were split into 5 instance-chunks per map so the
-hardest (level16) fits the node time limit; chunks are stitched back before aggregation.
+Convergence status (final):
+- **Fully converged (all algorithms, CI <2%):** descent-nodiag, sandstone-nodiag.
+- **All non-MM algorithms converged; MM capped:** plants-diag, descent-diag, sandstone-diag.
+  MM times out on 77–98% of diagonal instances, so its median is over the small survivorship
+  set it solves; it cannot reach ±3% and is reported with its (wider) CI.
+- **plants-nodiag:** A*/BiA*/BAE* converged; NBS/rev-A*/MM are heavy-tailed (CI 8–11%) and
+  reported with their CIs. (This mode has ~83% MVC=0 instances — see below — leaving fewer
+  usable ones.) Median exp/floor per (family, mode, algorithm) is in `summary.csv`; the
+  per-group CIs are in `convergence_report.txt`.
+
+Per-instance sample sizes: descent ~500/map, sandstone ~500/map, plants ~1500/map (diag)
+and 1500/map (nodiag). Full per-instance data: `combined_long.csv`.
 
 ## Correctness
-**Optimality consistency: 100% on every group** — the optimal algorithms (A\*, reverse
-A\*, MM, BiA\*, BAE\*, NBS) return the identical cost on every completed instance, across
-all three domains and both modes. No wrong-cost results across ~64k rows.
+Optimality consistency: the optimal algorithms (A*, reverse A*, MM, BiA*, BAE*, NBS) return
+identical costs on every solved instance across all groups. No wrong-cost results.
 
-## (A) Expansions vs. the floor (median exp/MVC — lower is better; 1.0 = optimal)
+## (A) Expansions vs. the floor (median exp/MVC; 1.0 = the f-based must-expand minimum)
 
-| domain / mode | A\* | BiA\* | NBS | BAE\* | MM | rev-A\* |
+| domain / mode | A* | BiA* | NBS | BAE* | MM | rev-A* |
 |---|--:|--:|--:|--:|--:|--:|
-| plants · diag     | **1.00** | 2.00 | 2.21 | 3.78 | 5.12 | 4.64 |
-| plants · nodiag   | **1.02** | 2.03 | 3.10 | 3.50 | 3.63 | 2.82 |
-| sandstone · diag  | **1.00** | 1.98 | 2.01 | 2.41 | 2.75 | 2.69 |
-| sandstone · nodiag| **1.05** | 2.01 | 2.38 | 2.63 | 2.96 | 2.51 |
-| descent · diag    | **1.00** | 1.99 | 2.00 | 2.34 | 3.26 | 2.26 |
-| descent · nodiag  | **1.01** | 2.00 | 2.21 | 2.75 | 3.11 | 2.48 |
+| plants · diag      | **1.00** | 1.62 | 1.69 | 1.57 | 3.39† | 1.73 |
+| plants · nodiag    | **1.06** | 2.03 | 3.41 | 3.62 | 4.60 | 3.04 |
+| sandstone · diag   | **1.00** | 1.54 | 1.66 | **0.95** | 2.63† | 1.35 |
+| sandstone · nodiag | **1.00** | 1.73 | 1.56 | 1.25 | 1.63 | 1.58 |
+| descent · diag     | **1.00** | 1.63 | 1.58 | 1.47 | 2.74† | 1.38 |
+| descent · nodiag   | **1.00** | 1.78 | 1.72 | 1.72 | 1.84 | 1.47 |
 
-## (C) Peak memory (median MB per instance)
+† MM median is over solved instances only; MM times out on most diagonal instances (see C).
 
-| domain / mode | A\* | BiA\* | NBS | BAE\* | MM | rev-A\* |
-|---|--:|--:|--:|--:|--:|--:|
-| plants · diag     | 23.5 | 29.4 | 36.8 | 41.9 | **69.8** | 49.2 |
-| plants · nodiag   | 10.9 | 10.9 | 40.1 | 10.9 | 22.0 | 13.5 |
-| sandstone · diag  |  9.8 | 10.8 |  9.8 | 10.8 | **16.8** | 10.8 |
-| sandstone · nodiag|  8.8 |  8.8 | 10.8 |  8.8 | 10.8 |  8.8 |
-| descent · diag    | 88.3 |111.1 |108.0 |133.3 | **252.4** |134.8 |
-| descent · nodiag  | 77.7 | 89.9 |102.8 |107.3 |121.0 |113.1 |
+**Findings.**
+- **A\* sits exactly at the floor** (1.00–1.06×) in every configuration. Note the floor is a
+  bound for *front-to-end* algorithms; A* is unidirectional and lands on it here.
+- **The "bidirectional pays a large premium" story is a biased-sample artifact.** On the
+  representative sample the bidirectional algorithms are only ~1.4–1.8× the floor on
+  diagonal maps — not the 2–6× the earlier easy-biased sample showed.
+- **BAE\* goes *below* the f-based floor** — 0.95× on sandstone-diag (56% of instances below
+  1.0, all provably optimal, some as low as 0.24×). This is not an error: BAE* uses the
+  distance-error term `d` (priority `b = f + d`), i.e. more information than the f-based
+  floor models, so it can legitimately expand fewer nodes than that bound
+  \citep{alcazar2020unifying}. The floor is a valid lower bound for the f-based algorithms
+  (A*, BiA*, NBS, MM), not for BAE*.
 
-## Findings
-- **(A) Forward A\* is essentially optimal** on all three voxel domains — within ~0–5% of
-  the theoretical must-expand floor in every configuration. With a strong consistent
-  heuristic the unidirectional search already expands nearly the minimal set; this matches
-  the literature (Siag et al.; Holte et al.).
-- **The bidirectional algorithms pay a 2–5× premium** here. **BiA\*** is consistently
-  cheapest (~2×) and **MM** the most expensive (frontier-balancing overhead + the
-  `max(f,2g)` cap forcing extra expansion). The gap is narrower on sandstone and descent
-  than on the blocky plants.
-- **(C) Memory tracks (A), and MM is the outlier in every diagonal config** — plants diag
-  69.8 MB vs A\*'s 23.5 (~3×); descent diag **252 MB** vs 88 (~2.9×), with the hardest
-  instances reaching 680–900 MB. Same story as its timeouts: MM does not merely expand
-  more, its paired open list makes each node dearer in both time and space. See
-  `figures/memory.pdf`.
-- **(B) Runtime.** A\* is fastest; MM slowest. Per-expansion cost separates search work from
-  overhead: MM costs ~21 µs/expansion vs ~2.5–5 µs for the others (~6–8×), which is *why*
-  it is the one that times out. Wall-clock reflects our implementation too, so we read it
-  as a practical, not a theoretical, measure.
-- **(C) Robustness / timeouts.** Only **MM** hits the wall-clock cap, on the hardest `diag`
-  instances: **27%** on plants, **15%** on sandstone, **69%** on descent (mazes) — every
-  other optimal algorithm completes ~100%. MM's descent-diag median above is therefore over
-  the ~31% it finished (survivorship — the easy instances).
-- **(D) Direction.** Reverse A\* expands the most on plants but is competitive on sandstone
-  and descent — directional asymmetry is domain-specific (see `directional_asymmetry.pdf`).
-- **GBFS** is not cost-optimal (`subopt`): far fewer expansions but longer paths — a
-  speed/quality axis, not comparable to the floor.
+## (C) Memory (median peak MB) and robustness
 
-## (E) Heuristic-strength crossover (the "when does bidirectional win" test)
-Sweeping a weakened heuristic `h' = w·h` (still admissible) on plant01's non-trivial
-instances directly tests the theory's central claim. Median expansions:
+| domain / mode | A* | BiA* | NBS | BAE* | MM | rev-A* | MM timeout |
+|---|--:|--:|--:|--:|--:|--:|--:|
+| plants · diag      |  97 | 110 | 107 | 104 | 241 | 184 | **77.0%** |
+| plants · nodiag    |  11 |  11 | 104 |  11 |  42 |  14 | 0% |
+| sandstone · diag   | 181 | 208 | 193 | 152 |  28‡ | 207 | **97.9%** |
+| sandstone · nodiag | 101 | 143 | 127 |  97 | 148 | 181 | 0% |
+| descent · diag     | 368 | 411 | 364 | 407 | 379 | 430 | **94.4%** |
+| descent · nodiag   | 270 | 364 | 319 | 359 | 411 | 403 | 0% |
 
-| w (→ weaker) | A\* | MM | BAE\* | BiA\* | NBS |
-|---|--:|--:|--:|--:|--:|
-| 1.00 (full octile) | **801** | 19 613 | 17 218 | 1 597 | 7 395 |
-| 0.60 | 215 578 | **79 753** | 132 233 | 306 903 | 297 017 |
-| 0.40 | 314 929 | (timeout) | **110 784** | 286 395 | 211 124 |
+‡ MM's low sandstone-diag memory is survivorship — it only solves the ~2% easiest instances.
 
-**A\* goes from best (801) to worst-of-pack as the heuristic weakens, and MM then BAE\*
-overtake it** — exactly the regime the papers predict for bidirectional search. Nuance:
-it is specifically the meet-in-the-middle (MM) and error-exploiting (BAE\*) methods that
-overtake; plain BiA\*/NBS do not. See `figures/crossover.pdf`.
+**Robustness / timeouts.** Only MM hits the wall-clock cap, and on the representative sample
+its diagonal timeout rate is severe: **77% (plants), 98% (sandstone), 94% (descent)** — far
+higher than the easy-biased sample suggested. Every other optimal algorithm completes ~100%.
+NBS is the memory outlier on plants-nodiag (104 MB vs ~11 MB), consistent with its heavy tail
+there.
 
-## Caveats / scope
-- Sample sizes: plants first 200 instances/map, sandstone 25 (its searches are far heavier,
-  10⁴–10⁵ expansions), descent 250. All maps in each family ran in both modes; descent is
-  complete (level16-diag, which previously overran the node limit, now finishes as 5 chunks).
-- `diag` MM on the biggest maps is dominated by wall-clock timeouts; the medians are over
-  completed (`status=ok`) instances, so MM's diag figures reflect the easier instances it
-  finished.
+## (B) Time
+A* is fastest; MM slowest per node. The 60s timeout is not load-bearing: across 188k solved
+runs the p99 wall time is 28.5s and p99.9 is 44s, with only 0.01% of solved runs finishing
+within 5s of the cap — the distribution is bimodal (solve fast or blow up).
+
+## (D) Direction
+Reverse A* differs from forward A* by domain (see `figures/directional_asymmetry.pdf`);
+the asymmetry matches the directional bias the benchmark authors document.
+
+## (E) Heuristic-strength crossover (representative; retracts the old n=6 result)
+Weight sweep `h' = w·h` over w ∈ {1.0,0.8,0.6,0.5,0.4}, one map per family, 80 shuffled
+instances, 300s timeout, raw median expansions. BAE*/A* ratio (<1 = BAE* wins):
+
+| domain | w=1.0 | w=0.8 | w=0.6 | w=0.5 | w=0.4 | MM solved (<w=1.0) |
+|---|--:|--:|--:|--:|--:|---|
+| plants    | 0.88 | 0.68 | 0.61 | 0.60 | 0.58 | 1–2/80 |
+| sandstone | 0.90 | 0.60 | 0.53 | 0.51 | 0.50 | 2–3/80 |
+| descent   | 1.58 | 1.19 | 1.11 | 1.09 | 1.07 | 0/80 |
+
+- **BAE\* gains on A\* as the heuristic weakens in every domain** (ratio drops monotonically).
+- It **overtakes** A* on plants and sandstone; on descent (mazes) it converges toward A* but
+  does not overtake in range.
+- **MM collapses** (0–3/80 solved below full strength). Sensitivity check: at **5× the budget
+  (300s)**, MM still solves only 0–2% on sandstone/descent — its timeouts are **intrinsic**,
+  not a 60s artifact. BAE* solves 100% at every weight.
+- BiA*/NBS never overtake A*.
+
+See `crossover/crossover_results.md` for the full breakdown, `figures/crossover.pdf`.
+
+## MVC=0 (heuristic-exact) instances, excluded from exp/floor
+MVC=0 iff h(s)=C* (the heuristic is exact from the start), so these are heuristic-exact
+instances, not short ones. Excluding them biases exp/floor toward heuristic-inexact instances.
+Fractions are large on open maps (plants-nodiag ~83%), small on cluttered/diagonal ones. Exact
+per-group counts: run `aggregate.py` (printed to stdout).
+
+## Caveats
+- MM (all diagonal) and plants-nodiag NBS/rev-A* did not reach ±3% CI within the instance
+  budget (timeout-limited and heavy-tailed respectively); they are reported with their CIs.
+- Crossover is one map per family — a cross-domain demonstration, not a full-family sweep.
+- Validation counts (~1.8M successors / ~58k edges, 0 illegal) are from an earlier subset and
+  not refreshed on the representative sample; the 0-illegal legality conclusion is unaffected.

@@ -1,0 +1,45 @@
+family            cfg    alg      n_ok   median  relCI%  conv
+descent           diag   astar   14285     1.00     0.0  yes
+descent           diag   bia     13855     1.63     0.4  yes
+descent           diag   nbs     13869     1.58     0.7  yes
+descent           diag   bae     13655     1.47     0.7  yes
+descent           diag   mm        740     2.74     4.6  NO
+descent           diag   rastar  14036     1.38     0.9  yes
+  -> (descent,diag) maxidx=499  extend
+descent           nodiag astar   13628     1.00     0.0  yes
+descent           nodiag bia     13628     1.78     0.6  yes
+descent           nodiag nbs     13628     1.72     0.7  yes
+descent           nodiag bae     13628     1.72     1.0  yes
+descent           nodiag mm      13628     1.84     1.0  yes
+descent           nodiag rastar  13628     1.47     1.1  yes
+  -> (descent,nodiag) maxidx=499  CONVERGED
+industrial-plants diag   astar    7463     1.00     0.0  yes
+industrial-plants diag   bia      7428     1.62     1.1  yes
+industrial-plants diag   nbs      7413     1.69     0.9  yes
+industrial-plants diag   bae      7424     1.57     2.9  yes
+industrial-plants diag   mm       1694     3.39     3.8  NO
+industrial-plants diag   rastar   7419     1.73     1.6  yes
+  -> (industrial-plants,diag) maxidx=1499  extend
+industrial-plants nodiag astar    1247     1.06     1.1  yes
+industrial-plants nodiag bia      1247     2.03     0.3  yes
+industrial-plants nodiag nbs      1247     3.41     8.3  NO
+industrial-plants nodiag bae      1247     3.62     2.6  yes
+industrial-plants nodiag mm       1247     4.60    10.6  NO
+industrial-plants nodiag rastar   1247     3.04     9.0  NO
+  -> (industrial-plants,nodiag) maxidx=1499  extend
+sandstone         diag   astar    5470     1.00     0.0  yes
+sandstone         diag   bia      5470     1.54     0.3  yes
+sandstone         diag   nbs      5470     1.66     0.4  yes
+sandstone         diag   bae      5470     0.95     1.3  yes
+sandstone         diag   mm         86     2.63     5.7  NO
+sandstone         diag   rastar   5470     1.35     1.2  yes
+  -> (sandstone,diag) maxidx=499  extend
+sandstone         nodiag astar    5184     1.00     0.1  yes
+sandstone         nodiag bia      5184     1.73     0.7  yes
+sandstone         nodiag nbs      5184     1.56     0.8  yes
+sandstone         nodiag bae      5184     1.25     1.6  yes
+sandstone         nodiag mm       5184     1.63     1.2  yes
+sandstone         nodiag rastar   5184     1.58     1.8  yes
+  -> (sandstone,nodiag) maxidx=499  CONVERGED
+
+NEED_EXTEND=descent:diag,industrial-plants:diag,industrial-plants:nodiag,sandstone:diag
