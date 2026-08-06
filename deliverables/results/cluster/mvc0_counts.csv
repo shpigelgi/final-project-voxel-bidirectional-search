@@ -1,0 +1,7 @@
+family,config,mvc0_instances,total_instances,pct_mvc0
+descent,diag,72,14394,0.5
+descent,nodiag,872,14500,6.0
+industrial-plants,diag,33,7500,0.4
+industrial-plants,nodiag,6253,7500,83.4
+sandstone,diag,30,5500,0.5
+sandstone,nodiag,316,5500,5.7
