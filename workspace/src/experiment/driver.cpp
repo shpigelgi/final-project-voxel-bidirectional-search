@@ -224,15 +224,19 @@ int main(int argc, char *argv[])
 			// Parent reports only failures; the child prints its own row on success.
 			// For these rows peak_mb is the killed/failed child's peak RSS (via wait4).
 			double peak = peakRSSmb(ru.ru_maxrss);
-			if (killed) {
+			// Race guard: a near-cap run can finish (child prints its ok row and exits 0)
+			// in the same poll window the timeout fires. wait4 then reaps a real exit-0,
+			// so the child's row is valid and we must NOT also emit a phantom timeout row.
+			bool childFinishedClean = WIFEXITED(status) && WEXITSTATUS(status) == 0;
+			if (killed && !childFinishedClean) {
 				printf("%s,%d,%s,0,0,0,%.6f,%.3f,timeout,%.1f,0\n",
 					   tag.c_str(), i, alg.c_str(), instances[i].optimal, timeoutSec * 1000.0, peak);
 				fflush(stdout);
-			} else if (WIFSIGNALED(status)) {
+			} else if (!killed && WIFSIGNALED(status)) {
 				const char *st = (WTERMSIG(status) == SIGKILL) ? "oom" : "error";
 				printf("%s,%d,%s,0,0,0,%.6f,0,%s,%.1f,0\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, st, peak);
 				fflush(stdout);
-			} else if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+			} else if (!killed && WIFEXITED(status) && WEXITSTATUS(status) != 0) {
 				printf("%s,%d,%s,0,0,0,%.6f,0,error,%.1f,0\n", tag.c_str(), i, alg.c_str(), instances[i].optimal, peak);
 				fflush(stdout);
 			}

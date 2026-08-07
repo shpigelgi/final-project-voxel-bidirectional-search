@@ -60,6 +60,19 @@ def main():
                     "mvc": floor if floor is not None else "", "exp_over_mvc": ratio,
                 })
 
+    # De-duplicate a fork/timeout race: a near-cap run that finished can also get a
+    # phantom timeout row from the parent. Keep the real (non-timeout) row for any
+    # duplicated (family,map,config,instance,alg) key. The driver is fixed; this also
+    # cleans data produced before the fix.
+    dedup = {}
+    for r in long_rows:
+        k = (r["family"], r["map"], r["config"], r["instance"], r["alg"])
+        if k not in dedup or (dedup[k]["status"] == "timeout" and r["status"] != "timeout"):
+            dedup[k] = r
+    dropped = len(long_rows) - len(dedup)
+    long_rows = list(dedup.values())
+    if dropped: print(f"de-duplicated {dropped} phantom timeout row(s)")
+
     long_csv = os.path.join(out_dir, "combined_long.csv")
     fields = ["family","map","config","instance","alg","expanded","cost","optimal",
               "time_ms","status","peak_mb","mvc","exp_over_mvc"]
