@@ -64,7 +64,7 @@ A* is the lightest in most groups but **not all** (descent-diag NBS < A*; sandst
 
 **Robustness / timeouts.** "Only MM times out" is **false** — correcting an earlier claim.
 Overall timeout rate by algorithm: **MM 45.1%, BAE* 1.28%, NBS 1.21%, BiA* 0.91%, rev-A* 0.60%,
-A* 0.08%.** It concentrates on diagonal maps; on **descent-diag: MM 94%, BAE* 4.6%, BiA* 3.2%,
+A* 0.07%.** It concentrates on diagonal maps; on **descent-diag: MM 94%, BAE* 4.6%, BiA* 3.2%,
 NBS 3.1%, rev-A* 2.0%, A* 0.3%.** So MM dominates but is not alone, and BAE*'s sub-floor result is
 computed with its hardest ~4.6% of descent-diag instances removed.
 
@@ -104,9 +104,16 @@ expansions. Reported as a speed/quality trade-off, excluded from the floor table
 - Instances/map: descent ~500, sandstone ~500, plants ~1500 (both modes). Full data in
   `combined_long.csv`; per-group MVC=0 counts in `mvc0_counts.csv` (plants-nodiag 83.4% — these
   are heuristic-exact, h(s)=C*, excluded from exp/floor).
-- **106 descent-diag instances are missing** (level10 429/500, level16 465/500): those chunks hit
-  the 12 h node wall (TIMEOUT at task level), so a slice of the hardest instances is absent for
-  all algorithms. Descent-diag n is therefore 14,394, not 14,500.
+- **Data lost to the 12 h node wall on two descent-diag levels** (level10, level16): 106 whole
+  instances never started (level10 429/500, level16 465/500), and a further **35 individual
+  (instance, algorithm) rows** were cut off mid-instance when the task was terminated (the later
+  algorithms in the fixed per-instance order, e.g. GBFS/NBS, on the instance in progress). This is
+  a node wall-clock truncation, **not** the driver dropping runs silently — within a completed
+  task every run is recorded. Descent-diag n is therefore 14,394, not 14,500.
+- A prior driver fork/timeout race double-logged 4 near-cap runs as both `ok` and `timeout`; these
+  phantom rows are removed (combined_long 384,223 rows, 27,015 timeouts). Fixed in the driver; no
+  value figure was affected (aggregation filters `status=ok`), only A*'s overall timeout rate
+  (0.08→0.07%).
 - The four `NEED_EXTEND` groups stopped at round 1 / 1500-per-map, not because a budget ran out;
   their unconverged cells are heavy-tailed and might converge with more instances.
 - Validation counts (~1.8M successors / ~58k edges, 0 illegal) are from an earlier subset, not
