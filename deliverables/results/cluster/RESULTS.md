@@ -20,15 +20,23 @@ others**:
   gap. Every one of MM's 73 sub-bound cases has ratio ≥ **0.976** (median 0.998) — a fraction of a
   percent, on balanced instances where the MVC minimum lands at τ=C*/2. So the bound is tight for
   the canonical in-class algorithm.
-- **BAE\*, NBS, BiA\*** dip well below (down to ~0.02× for BAE*) because each uses pruning or a
-  bound beyond the pairwise summed-g condition: BAE*'s `b=f+d`, NBS's incumbent pruning, BiA*'s
-  consistency-based nipping (which also puts BiA* outside the strict admissible class). This is the
-  individual-bounds gap (\citealt{alcazar2020unifying}), not the floor being wrong.
+- **BiA\* and BAE\*** dip far below (BAE* to ~0.02×) via a candidate/class escape already argued in
+  the report: BiA*'s consistency-based nipping and individual-f termination put it outside the
+  strict admissible-DXBB class; BAE* likewise. The bound does not bind them.
+- **NBS** reaches 0.377 (median 0.858) and is **unexplained**. It is admissible DXBB (in the class),
+  has no nipping, and its only uncounted closes are incumbent-pruned at f ≥ C* — non-candidates
+  outside the cover — so it is not undercounting. On the exact instances where NBS < 0.5, **A\*
+  attains the floor** (A* exp/floor there: median 1.03, min 1.00, 0 of 12 below 1.0), so the floor
+  is corroborated on those very instances and is not inflated. NBS genuinely below a verified floor
+  is a stated limitation (297 of 46,886 instances), not a floor artifact. The leading unverified
+  hypothesis is that NBS's termination (C_lb reaching the incumbent) fires before its expanded set
+  covers G_MX — the analogue of BiA*'s termination point — which would need checking on a descent
+  instance (all NBS<0.5 cases are on descent maps, unavailable locally).
 
 So **read `exp/floor` as distance from this pairwise bound**: values > 1 quantify avoidable work;
-values < 1 (only BAE*/NBS/BiA*, meaningfully) show the bound is loose for algorithms with tighter
-individual bounds. MM's sub-1% dips are boundary rounding, not looseness. No algorithm beats the
-optimum. See `floor_below_diagnostic.md` for the full verification.
+A* and MM sit at the bound (MM's sub-1% dips are boundary rounding); BiA*/BAE* fall below via a
+class escape; NBS falls below a corroborated floor for a reason we do not resolve. No algorithm
+beats the optimum. See `floor_below_diagnostic.md` for the full verification.
 
 ## (A) Expansions vs. the (pairwise) floor — median exp/MVC
 

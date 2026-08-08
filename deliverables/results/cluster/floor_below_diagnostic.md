@@ -41,22 +41,40 @@ black-box, front-to-end). Our algorithms split cleanly:
     = `S − 452`, i.e. it expands the τ=C*/2 box minus a 2.4% `g≈C*/2` boundary sliver. Every other
     MM case is tighter (≥ 0.9759), and integer-cost nodiag maps are tighter still (≥ 0.9949), the
     crisp-boundary version of the same effect (BSG-nodiag inst 69: MM 570,804 vs S 572,282, 0.26%).
-- **BAE*, NBS, BiA*** dip well below the floor (to 0.02–0.4×) because each exploits pruning or a
-  bound beyond the pairwise summed-g condition: BAE*'s priority `b = f + d`, NBS's incumbent-based
-  pruning, and BiA*'s consistency-based nipping (discarding a node already closed on the opposite
-  frontier). For these the pairwise floor is a valid but **loose** lower bound — the individual-
-  bounds gap of Alcázar 2020. BiA*'s nipping additionally takes it outside the strict admissible-
-  DXBB class, so its sub-bound scores are expected by our own argument, not evidence about the
-  floor. The earlier "floor over-states ~2×" claim was drawn from BiA* inst 1886 and is retracted
-  for exactly this reason: it measured an out-of-class algorithm.
+- **BiA* and BAE*** dip far below the floor (BiA* to ~0.07×, BAE* to ~0.02×) via a candidate/class
+  escape: BiA*'s consistency-based nipping (discarding a node already closed on the opposite
+  frontier) plus its individual-f termination `U ≤ max(fmin_F, fmin_B)`, and BAE* likewise. These
+  take them outside the strict admissible-DXBB class, so the bound does not bind them and their
+  sub-bound scores are expected by our own argument, not evidence about the floor. The earlier
+  "floor over-states ~2×" claim was drawn from BiA* inst 1886 and is retracted for exactly this
+  reason: it measured an out-of-class algorithm. (Note: on BiA* inst 1886 the 3,144 nips do not
+  quantitatively account for the ~110k gap; the individual-f termination is the larger mechanism.)
+- **NBS** is the one genuinely open case. It dips to 0.377 (median 0.858, 297 instances), which is
+  two orders of magnitude past MM's boundary effect, so MM's explanation does not touch it. NBS is
+  admissible DXBB (Eckerle present it as such), has no nipping, and its only uncounted closes are
+  incumbent-pruned at f ≥ C* — non-candidates outside the cover — so it is not undercounting
+  relative to the MVC. And the floor is not inflated on its sub-bound instances: on the exact
+  instances where NBS < 0.5, **A* attains the floor** (A* exp/floor median 1.03, min 1.00, 0 of 12
+  below 1.0), so A* corroborates the MVC on those very instances. NBS below a corroborated floor,
+  while in the class and not undercounting, is a genuine inconsistency reported as a limitation.
+  The leading unverified hypothesis (analogue of the BiA* termination point): NBS's termination on
+  C_lb reaching the incumbent may fire before its expanded set covers G_MX. All NBS<0.5 cases are
+  on descent maps, which are not available locally, so this could not be tested with the
+  three-number check; it is the one thing to chase if the cluster maps return.
 
 ## Consequence for the paper
-`exp/floor` is distance from this specific pairwise lower bound. Read it as: the bound is **tight**
-for the in-class algorithms (A* attains it, MM attains it to within boundary rounding, ≥0.976 in
-every case), and **loose** for algorithms with individual/tighter bounds or an out-of-class prune
-(BAE*, NBS, BiA*), which legitimately fall below. No algorithm beats the optimum. A tight
-per-instance bound for the latter would need the full individual-bounds/MEP machinery — future
-work, not a patch.
+`exp/floor` is distance from this specific pairwise lower bound, and the algorithms fall into four
+groups, not two:
+1. **A*** attains the bound exactly (by construction — it is the forward contour).
+2. **MM** is pinned at it, worst 0.976 / median 0.998, explained by the τ=C*/2 identity and
+   verified on the worst case; the dips are boundary rounding, not looseness. A* and MM together
+   are independent evidence the floor is not inflated on their groups.
+3. **BiA* and BAE*** fall far below via a candidate/class escape (nipping + individual-f
+   termination), so the bound does not bind them — expected, not a floor issue.
+4. **NBS** falls to 0.377 (median 0.858) while in the class and not undercounting, against a floor
+   A* corroborates on the same instances. This one is **unexplained** and reported as a limitation
+   (297 of 46,886), with the failed mechanisms named and the termination hypothesis flagged.
+No algorithm beats the optimum.
 
 ## Reproduce
 ```

@@ -50,7 +50,10 @@ def main():
                 except (ValueError, KeyError):
                     continue
                 floor = mvc.get(inst)
-                ratio = (exp / floor) if (floor and floor > 0) else ""
+                # Only meaningful for solved runs: a timeout/failed run logs expanded=0,
+                # which would otherwise yield a misleading exp_over_mvc=0.0 in the raw file.
+                status = row.get("status", "")
+                ratio = (exp / floor) if (floor and floor > 0 and status == "ok") else ""
                 long_rows.append({
                     "family": family, "map": base, "config": config, "instance": inst,
                     "alg": row["alg"], "expanded": exp,
