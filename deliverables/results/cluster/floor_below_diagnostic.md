@@ -27,13 +27,20 @@ black-box, front-to-end). Our algorithms split cleanly:
   is the bound's all-forward cover (0 of 27,218 diagonal A* instances below 1.0).
 - **MM** is in-class with no escape, and it sits **at** the floor. MM expands exactly the set
   `{max(f,2g) < C*}` = `{f<C* and g<C*/2}` on each side, which is the floor's threshold cover at
-  τ=C*/2, `S = N_F(C*/2)+N_B(C*/2)`. Verified on BSG-nodiag inst 69: MM = 570,804 vs S = 572,282
-  (0.26%). Because the scan considers τ=C*/2, `MVC ≤ S`, so `MM ≥ MVC` up to a boundary gap.
-  Across all cluster data MM's sub-bound ratios are **≥ 0.9759 (median 0.998)** — 73 cases, all a
-  fraction of a percent. Those dips occur only on *balanced* instances where the MVC's minimum
-  lands at τ=C*/2 (so MVC = S) and MM's count of the `g<C*/2` box falls a hair short at the strict
-  `g = C*/2` boundary (a rounding effect, wider on diagonal maps where C* is irrational). This is
-  the floor being **tight** for MM, not loose.
+  τ=C*/2, `S = N_F(C*/2)+N_B(C*/2)`. Because the scan considers τ=C*/2, `MVC ≤ S`, so `MM ≥ MVC`
+  up to a boundary gap. Across all cluster data MM's sub-bound ratios are **≥ 0.9759 (median
+  0.998)** — 73 cases, all a fraction of a percent. Those dips occur only on *balanced* instances
+  where the MVC's minimum lands at τ=C*/2 (so MVC = S) and MM's count of the `g<C*/2` box falls a
+  hair short at the strict `g = C*/2` boundary (a rounding effect, wider on diagonal maps where C*
+  is irrational). This is the floor being **tight** for MM, not loose.
+  - Verified directly on the **worst MM case in the whole run**, reproduced exactly by re-deriving
+    the seeded shuffle (seed 20260802): plant02-diag shuffled inst 292. MM/MVC = **0.9759**,
+    matching the cluster to four decimals. The floor is sound there — A* = 19,383 vs fwd_cand
+    19,379, rev-A* = 20,008 vs bwd_cand 20,006 (candidates equal the contours), C* agrees. It is a
+    balanced instance, so `MVC = 18,532 ≈ S = 18,537` (the τ=C*/2 cover is the minimum). MM = 18,085
+    = `S − 452`, i.e. it expands the τ=C*/2 box minus a 2.4% `g≈C*/2` boundary sliver. Every other
+    MM case is tighter (≥ 0.9759), and integer-cost nodiag maps are tighter still (≥ 0.9949), the
+    crisp-boundary version of the same effect (BSG-nodiag inst 69: MM 570,804 vs S 572,282, 0.26%).
 - **BAE*, NBS, BiA*** dip well below the floor (to 0.02–0.4×) because each exploits pruning or a
   bound beyond the pairwise summed-g condition: BAE*'s priority `b = f + d`, NBS's incumbent-based
   pruning, and BiA*'s consistency-based nipping (discarding a node already closed on the opposite
