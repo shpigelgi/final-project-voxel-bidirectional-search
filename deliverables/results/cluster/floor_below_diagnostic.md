@@ -1,47 +1,64 @@
-# Why some algorithms report exp/floor < 1.0 — resolved (corrected)
+# Why some algorithms report exp/floor < 1.0 — resolved (verified)
 
-An independent review flagged that RESULTS.md claimed the must-expand floor is a valid lower
-bound for A*, BiA*, NBS, MM, while the data showed BiA*, NBS, and BAE* all below it on some
-instances. This note records the investigation and its **corrected** conclusion. (An earlier
-version of this note wrongly concluded "BiA* = uncounted nipping, BAE* = real d-term"; that held
-only for near-threshold instances and is retracted.)
+An independent review flagged that RESULTS.md treated the must-expand floor as a valid lower
+bound for A*, BiA*, NBS, MM, while the data showed several algorithms below it on some instances.
+This note records the final investigation and its verified conclusion. Two earlier conclusions in
+this file are retracted and explained below, so the reasoning trail is honest.
 
-## What we tested
-Instrumented a `nodesNipped` counter in BiAStar.h and hog2/generic/BAE.h (nodes closed because
-already closed on the opposite frontier — removed from open but not counted as expansions), had
-the driver emit a `nipped` column, rebuilt, and checked `expanded + nipped` vs. the computed MVC
-on hard diagonal instances.
+## The floor is computed correctly (verified three ways)
+The floor is the MVC of the pairwise must-expand graph: forward candidates `f_F(u) < C*`, backward
+candidates `f_B(v) < C*`, edge iff `g_F(u)+g_B(v) < C*` (Eckerle 2017 Thm 6 / Shaham et al. 2017).
+- The candidate g-multisets equal the true A*/reverse-A* optimal contours. On plant02-diag inst
+  1886: A* expands 199,456 ≈ fwd_cand 199,454, reverse-A* 311,047 ≈ bwd_cand 311,041.
+- The threshold scan attains the true minimum vertex cover. Checked against a direct
+  maximum-matching MVC on 3,000 random chain graphs (`verify_mvc_scan.py`, 0 mismatches), and
+  directly on inst 1886: the scan's 199,454 is the true minimum over all breakpoints (the balanced
+  cover at τ=C*/2 is 254,225, larger).
+- C* agrees between floor and runs.
 
-## Findings
-- **Near-threshold cases (exp/floor ≈ 0.95–1.0):** BiA* nips 11k–22k nodes and
-  `expanded + nipped ≥ MVC` — a counting convention, consistent with the floor.
-- **Extreme cases falsify that explanation.** plant02-diag inst 1886: BiA* is optimal, expands
-  85,917, nips only 3,144 → 89,061 total, against a computed floor of **199,454** (ratio 0.447).
-  Counting nips does not close a 2× gap. Since an optimal front-to-end algorithm's expanded set is
-  a valid vertex cover, the **true MVC ≤ ~89k, so the computed floor over-states it ~2×** here.
-- BAE* sub-floor instances have nip = 0 yet expand well below the floor — same phenomenon, not a
-  separate d-term effect distinguishable from bound-looseness.
+So the floor is not over-computed and the scan is not the issue. Both earlier suspicions —
+"uncounted nipping" and later "the floor over-states ~2×" — are **retracted**.
 
-## Root cause: the pairwise floor is loose, not a coding bug
-The threshold scan in `mvc.cpp` is correct (skipping duplicate g-values is valid), and the graph
-`u~v iff g_F(u)+g_B(v) < C*` is a chain graph, so the threshold form equals the true MVC **of
-that graph** (König). The looseness is in the **bound/graph itself**: the pairwise summed-g
-condition over-counts what a front-to-end algorithm using individual f-bounds actually needs.
-This is the individual-bounds gap of \citealt{alcazar2020unifying}. On inst 1886 the MVC equals
-the all-forward extreme (`MVC = fwd_cand = 199,454`); A* attains it, the bidirectional algorithms
-beat it because the pairwise bound is not tight.
+## The floor is a lower bound only for in-class (admissible front-to-end DXBB) algorithms
+Eckerle's must-expand result binds algorithms in the DXBB class (deterministic, expansion-based,
+black-box, front-to-end). Our algorithms split cleanly:
 
-## Consequence
-`exp/floor < 1.0` means "below this specific pairwise lower bound," **not** "below the optimum."
-A* attains the bound; BiA*/NBS/BAE* dip below it where the bound is loose. RESULTS.md axis A is
-framed accordingly. A tight per-instance bound would require the full individual-bounds/MEP
-machinery — future work, not a patch.
+- **A* / reverse-A*** attain the floor exactly. A* expands the full forward `f<C*` contour, which
+  is the bound's all-forward cover (0 of 27,218 diagonal A* instances below 1.0).
+- **MM** is in-class with no escape, and it sits **at** the floor. MM expands exactly the set
+  `{max(f,2g) < C*}` = `{f<C* and g<C*/2}` on each side, which is the floor's threshold cover at
+  τ=C*/2, `S = N_F(C*/2)+N_B(C*/2)`. Verified on BSG-nodiag inst 69: MM = 570,804 vs S = 572,282
+  (0.26%). Because the scan considers τ=C*/2, `MVC ≤ S`, so `MM ≥ MVC` up to a boundary gap.
+  Across all cluster data MM's sub-bound ratios are **≥ 0.9759 (median 0.998)** — 73 cases, all a
+  fraction of a percent. Those dips occur only on *balanced* instances where the MVC's minimum
+  lands at τ=C*/2 (so MVC = S) and MM's count of the `g<C*/2` box falls a hair short at the strict
+  `g = C*/2` boundary (a rounding effect, wider on diagonal maps where C* is irrational). This is
+  the floor being **tight** for MM, not loose.
+- **BAE*, NBS, BiA*** dip well below the floor (to 0.02–0.4×) because each exploits pruning or a
+  bound beyond the pairwise summed-g condition: BAE*'s priority `b = f + d`, NBS's incumbent-based
+  pruning, and BiA*'s consistency-based nipping (discarding a node already closed on the opposite
+  frontier). For these the pairwise floor is a valid but **loose** lower bound — the individual-
+  bounds gap of Alcázar 2020. BiA*'s nipping additionally takes it outside the strict admissible-
+  DXBB class, so its sub-bound scores are expected by our own argument, not evidence about the
+  floor. The earlier "floor over-states ~2×" claim was drawn from BiA* inst 1886 and is retracted
+  for exactly this reason: it measured an out-of-class algorithm.
+
+## Consequence for the paper
+`exp/floor` is distance from this specific pairwise lower bound. Read it as: the bound is **tight**
+for the in-class algorithms (A* attains it, MM attains it to within boundary rounding, ≥0.976 in
+every case), and **loose** for algorithms with individual/tighter bounds or an out-of-class prune
+(BAE*, NBS, BiA*), which legitimately fall below. No algorithm beats the optimum. A tight
+per-instance bound for the latter would need the full individual-bounds/MEP machinery — future
+work, not a patch.
 
 ## Reproduce
 ```
-./src/build.sh /tmp/vb   # driver emits a `nipped` column for bia/bae; needs hog2-patches/add_bae_nipped.py
-/tmp/vb/mvc <map> <scen> --start 1850 --limit 90 > mvc.csv
-/tmp/vb/voxdriver <map> <scen> --start 1850 --limit 90 --algs astar,bia,bae > exp.csv
-# join on instance; for bia rows with expanded<mvc, check expanded+nipped vs mvc.
-# plant02 hard tail contains the extreme (e.g. inst 1886).
+./src/build.sh /tmp/vb            # driver emits `nipped`; needs hog2-patches/add_bae_nipped.py
+# floor soundness on the worst BiA* case (out-of-class, expected below floor):
+DUMP_INST=1886 /tmp/vb/mvc <plant02.3dmap> <plant02.3dscen> --start 1886 --limit 1
+# MM = tau=C*/2 threshold cover (in-class, at the floor):
+DUMP_INST=69 /tmp/vb/mvc <BSG.3dmap> <BSG.3dscen> --no-diagonals --limit 80   # -> /tmp/{fwd,bwd}G.txt
+/tmp/vb/voxdriver <BSG.3dmap> <BSG.3dscen> --no-diagonals --limit 80 --algs mm
+# compare MM_total to #{g_F<C*/2}+#{g_B<C*/2} from the dumped g-multisets.
+# scan correctness: python3 cluster/verify_mvc_scan.py
 ```

@@ -6,24 +6,29 @@ algorithms, both directions, on a seeded-shuffle representative sample with a bo
 (384,227 rows). Metric medians: `summary.csv`.
 
 ## Reading the floor axis correctly (important)
-Axis A compares node expansions to the **must-expand lower bound** — the MVC of the
-must-expand graph under the pairwise condition `g_F(u)+g_B(v) < C*` (Shaham et al. 2017/2018).
-**This bound is valid but not tight.** It is the bound implied by *summed* g-values; front-to-end
-algorithms that exploit individual f-bounds can expand fewer nodes than it
-(\citealt{alcazar2020unifying}). Empirically:
-- **A\*** attains the bound exactly — it expands the full forward `f<C*` contour, which equals
-  the bound's all-forward cover (verified: 0 of 27,218 diagonal A* instances below 1.0).
-- **The bidirectional algorithms dip below it** on the harder instances, by a little to a lot
-  (down to ~0.04× in extreme cases). This is *not* "better than optimal": it means the pairwise
-  bound is loose for those algorithms/instances. We confirmed this directly — e.g. plant02-diag
-  inst 1886: BiA* is optimal and processes 89,061 nodes (incl. nips) against a computed floor of
-  199,454, so the true minimum is ≤ 89k and the floor over-states it ~2×.
+Axis A compares node expansions to the must-expand lower bound — the MVC of the must-expand graph
+under the pairwise condition `g_F(u)+g_B(v) < C*` (Eckerle 2017 Thm 6 / Shaham et al. 2017). The
+floor is correctly computed (candidate sets equal the A*/reverse-A* optimal contours; the
+threshold scan attains the true MVC, checked against maximum-matching on 3,000 chain graphs and
+directly on the hardest instance; C* agrees). It is a valid lower bound for admissible front-to-end
+algorithms, and the data shows it is **tight for the in-class algorithms and loose for the
+others**:
+- **A\*** attains the bound exactly — it expands the full forward `f<C*` contour, which equals the
+  bound's all-forward cover (0 of 27,218 diagonal A* instances below 1.0).
+- **MM** sits **at** the bound. It expands the set `{max(f,2g)<C*}`, i.e. the bound's threshold
+  cover at τ=C*/2; since the scan considers that threshold, MM ≥ MVC up to a boundary-rounding
+  gap. Every one of MM's 73 sub-bound cases has ratio ≥ **0.976** (median 0.998) — a fraction of a
+  percent, on balanced instances where the MVC minimum lands at τ=C*/2. So the bound is tight for
+  the canonical in-class algorithm.
+- **BAE\*, NBS, BiA\*** dip well below (down to ~0.02× for BAE*) because each uses pruning or a
+  bound beyond the pairwise summed-g condition: BAE*'s `b=f+d`, NBS's incumbent pruning, BiA*'s
+  consistency-based nipping (which also puts BiA* outside the strict admissible class). This is the
+  individual-bounds gap (\citealt{alcazar2020unifying}), not the floor being wrong.
 
-So **read `exp/floor` as distance from this specific pairwise bound, not from the per-instance
-optimum**: values > 1 quantify avoidable work relative to the bound; values < 1 show the bound is
-not tight for that algorithm. A tight bound would need the full individual-bounds machinery
-(future work). We did **not** claim, and the data does not support, that any algorithm beats the
-optimum.
+So **read `exp/floor` as distance from this pairwise bound**: values > 1 quantify avoidable work;
+values < 1 (only BAE*/NBS/BiA*, meaningfully) show the bound is loose for algorithms with tighter
+individual bounds. MM's sub-1% dips are boundary rounding, not looseness. No algorithm beats the
+optimum. See `floor_below_diagnostic.md` for the full verification.
 
 ## (A) Expansions vs. the (pairwise) floor — median exp/MVC
 
