@@ -10,21 +10,35 @@
 set -euo pipefail
 CLUSTER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; WS="$(dirname "$CLUSTER_DIR")"
 VOX="$WS/benchmarks/voxel-maps"
-MAP="$(find "$VOX/industrial-plants" -name 'plant01.3dmap' | head -1)"
-SCEN="$(find "$VOX" -name 'plant01.shuf.3dscen' | head -1)"   # seeded-shuffle scen
-[ -z "$SCEN" ] && { echo "run shuffle_scens.py first"; exit 1; }
+# MAPS: space-separated map basenames (no extension). Default reproduces the original
+# single-map-per-family crossover. To broaden and drop the per-map hedge, pass several
+# maps per family, e.g.
+#   MAPS="plant01 plant02 plant05 BSG BB CA level01 level07 levels1" ./run_crossover.sh
+# Each basename must have both <base>.3dmap and <base>.shuf.3dscen under $VOX
+# (run shuffle_scens.py first). Unknown/unshuffled names are skipped with a warning.
+MAPS="${MAPS:-plant01}"
 WEIGHTS="${WEIGHTS:-1.0 0.8 0.6 0.5 0.4}"
 N="${N:-80}"; CHUNK="${CHUNK:-20}"
 
 MAN="$CLUSTER_DIR/manifest.xover.tsv"; : > "$MAN"
-for hw in $WEIGHTS; do
-  s=0; while [ "$s" -lt "$N" ]; do
-    printf '%s\t%s\t%s\t%s\t%s\n' "$MAP" "$SCEN" "$hw" "$s" "$CHUNK" >> "$MAN"
-    s=$((s+CHUNK))
+NMAPS=0
+for base in $MAPS; do
+  MAP="$(find "$VOX" -name "${base}.3dmap" | head -1)"
+  SCEN="$(find "$VOX" -name "${base}.shuf.3dscen" | head -1)"
+  if [ -z "$MAP" ] || [ -z "$SCEN" ]; then
+    echo "WARN: skipping '$base' (missing .3dmap or .shuf.3dscen under $VOX)"; continue
+  fi
+  NMAPS=$((NMAPS+1))
+  for hw in $WEIGHTS; do
+    s=0; while [ "$s" -lt "$N" ]; do
+      printf '%s\t%s\t%s\t%s\t%s\n' "$MAP" "$SCEN" "$hw" "$s" "$CHUNK" >> "$MAN"
+      s=$((s+CHUNK))
+    done
   done
 done
+[ "$NMAPS" -eq 0 ] && { echo "no usable maps in MAPS='$MAPS'"; exit 1; }
 NT=$(wc -l < "$MAN" | tr -d ' ')
-echo "crossover manifest: $NT tasks ($(echo "$WEIGHTS" | wc -w) weights x $((N/CHUNK)) chunks)"
+echo "crossover manifest: $NT tasks ($NMAPS maps x $(echo "$WEIGHTS" | wc -w) weights x $((N/CHUNK)) chunks)"
 
 export ROOT="$WS" TIMEOUT="${TIMEOUT:-300}" MEMMB="${MEMMB:-7000}" ALGS=astar,mm,bae,bia,nbs
 export MANIFEST="$MAN"
