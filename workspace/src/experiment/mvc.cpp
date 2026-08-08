@@ -162,6 +162,14 @@ int main(int argc, char *argv[])
 		Contour(env, g, s, Cstar, bwdG);   // backward: heuristic toward start
 		uint64_t mvc = MinVertexCover(fwdG, bwdG, Cstar);
 
+		const char *di = getenv("DUMP_INST");
+		if (di && idx == atoi(di)) {
+			FILE *ff = fopen("/tmp/fwdG.txt", "w"); for (double x : fwdG) fprintf(ff, "%.10f\n", x); fclose(ff);
+			FILE *fb = fopen("/tmp/bwdG.txt", "w"); for (double x : bwdG) fprintf(fb, "%.10f\n", x); fclose(fb);
+			fprintf(stderr, "dumped inst %d: |fwd|=%zu |bwd|=%zu Cstar=%.10f mvc=%llu\n",
+					idx, fwdG.size(), bwdG.size(), Cstar, (unsigned long long)mvc);
+		}
+
 		printf("%d,%.6f,%zu,%zu,%llu\n", idx, Cstar, fwdG.size(), bwdG.size(), (unsigned long long)mvc);
 		fflush(stdout);
 		idx++; done++;
