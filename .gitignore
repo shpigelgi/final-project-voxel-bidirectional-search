@@ -3,6 +3,8 @@
 workspace/hog2/
 # Warthog voxel-map benchmarks — download with workspace/scripts/fetch-benchmarks.sh
 workspace/benchmarks/
+# Live Overleaf project (git bridge clone, read-only mirror) — see REPO_GUIDE.md
+deliverables/report/overleaf-live/
 
 # === Build artifacts ===
 workspace/**/bin/
@@ -38,7 +40,9 @@ deliverables/report/overleaf/*.pdf
 deliverables/report/overleaf/*.aux
 deliverables/report/overleaf/*.log
 deliverables/report/overleaf/*.out
-deliverables/report/overleaf/*.bbl
+# .bbl IS committed: AAAI camera-ready expects it, and it lets a single
+# pdflatex pass resolve citations without running bibtex.
+!deliverables/report/overleaf/report.bbl
 deliverables/report/overleaf/*.blg
 deliverables/report/overleaf/*.fls
 deliverables/report/overleaf/*.fdb_latexmk
