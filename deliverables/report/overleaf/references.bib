@@ -1,4 +1,5 @@
 % References for "Bidirectional Heuristic Search on 3D Voxel Maps".
+% Verified against DBLP and Semantic Scholar, 2026-08-04.
 % Cite with \citep{key} / \citet{key} (natbib).
 
 % ---- Foundations (unidirectional & bidirectional search) ----
@@ -22,6 +23,13 @@
   year      = {1971}
 }
 
+@book{pearl1984heuristics,
+  author    = {Pearl, Judea},
+  title     = {Heuristics: Intelligent Search Strategies for Computer Problem Solving},
+  publisher = {Addison-Wesley},
+  year      = {1984}
+}
+
 @article{dechter1985generalized,
   author  = {Dechter, Rina and Pearl, Judea},
   title   = {Generalized Best-First Search Strategies and the Optimality of {A}*},
@@ -41,18 +49,25 @@
   year    = {1997}
 }
 
+% Two Sadhukhan works circulate as "the BAE* paper" and the literature is split.
+% We cite the 2013 journal one, which is what HOG2's BAE* implementation matches and
+% what Shperberg et al. give in full (CSI Journal of Computing 2(1-2): S1:57-S1:64).
+% Note that siag2023frontToEnd instead cites "Sadhukhan, S. K. 2012. A new approach to
+% bidirectional heuristic search using error functions. In CSI" - different title, year
+% and venue. Deliberate choice, not an oversight, if the bibliographies are compared.
 @article{sadhukhan2013bae,
   author  = {Sadhukhan, Samir Kumar},
   title   = {Bidirectional Heuristic Search Based on Error Estimate},
   journal = {CSI Journal of Computing},
   volume  = {2},
   number  = {1--2},
+  pages   = {S1:57--S1:64},
   year    = {2013}
 }
 
 % ---- The must-expand / lower-bound theory (the yardstick) ----
 @article{holte2017mm,
-  author  = {Holte, Robert C. and Felner, Ariel and Sharon, Guni and Sturtevant, Nathan R.},
+  author  = {Holte, Robert C. and Felner, Ariel and Sharon, Guni and Sturtevant, Nathan R. and Chen, Jingwei},
   title   = {{MM}: A Bidirectional Search Algorithm that is Guaranteed to Meet in the Middle},
   journal = {Artificial Intelligence},
   volume  = {252},
@@ -64,6 +79,7 @@
   author    = {Eckerle, J{\"u}rgen and Chen, Jingwei and Sturtevant, Nathan R. and Zilles, Sandra and Holte, Robert C.},
   title     = {Sufficient Conditions for Node Expansion in Bidirectional Heuristic Search},
   booktitle = {Proceedings of the International Conference on Automated Planning and Scheduling (ICAPS)},
+  pages     = {79--87},
   year      = {2017}
 }
 
@@ -79,6 +95,7 @@
   author    = {Shaham, Eshed and Felner, Ariel and Chen, Jingwei and Sturtevant, Nathan R.},
   title     = {The Minimal Set of States that Must Be Expanded in a Front-to-End Bidirectional Search},
   booktitle = {Proceedings of the International Symposium on Combinatorial Search (SoCS)},
+  pages     = {82--90},
   year      = {2017}
 }
 
@@ -86,6 +103,7 @@
   author    = {Shaham, Eshed and Felner, Ariel and Sturtevant, Nathan R. and Rosenschein, Jeffrey S.},
   title     = {Minimizing Node Expansions in Bidirectional Search with Consistent Heuristics},
   booktitle = {Proceedings of the International Symposium on Combinatorial Search (SoCS)},
+  pages     = {81--89},
   year      = {2018}
 }
 
@@ -99,7 +117,7 @@
 }
 
 @article{siag2025bridging,
-  author  = {Siag, Lior and Shperberg, Shahaf S. and Felner, Ariel and Sturtevant, Nathan R.},
+  author  = {Siag, Lior and Shperberg, Shahaf S.},
   title   = {Bridging Theory and Practice in Bidirectional Heuristic Search with Front-to-End Consistent Heuristics},
   journal = {Artificial Intelligence},
   volume  = {348},
@@ -107,7 +125,44 @@
   year    = {2025}
 }
 
-% ---- Domain: 3D voxel pathfinding benchmarks ----
+% Conference version of the above, which does carry Felner and Sturtevant as
+% co-authors. Cite this one if you want to credit all four.
+@inproceedings{siag2023frontToEnd,
+  author    = {Siag, Lior and Shperberg, Shahaf S. and Felner, Ariel and Sturtevant, Nathan R.},
+  title     = {Front-to-End Bidirectional Heuristic Search with Consistent Heuristics: Enumerating and Evaluating Algorithms and Bounds},
+  booktitle = {Proceedings of the International Joint Conference on Artificial Intelligence (IJCAI)},
+  pages     = {5631--5638},
+  year      = {2023}
+}
+
+@inproceedings{barker2015limitations,
+  author    = {Barker, Joseph K. and Korf, Richard E.},
+  title     = {Limitations of Front-to-End Bidirectional Heuristic Search},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  pages     = {1086--1092},
+  year      = {2015}
+}
+
+@inproceedings{alcazar2021consistent,
+  author    = {Alc{\'a}zar, Vidal},
+  title     = {The Consistent Case in Bidirectional Search and a Bucket-to-Bucket Algorithm as a Middle Ground between Front-to-End and Front-to-Front},
+  booktitle = {Proceedings of the International Conference on Automated Planning and Scheduling (ICAPS)},
+  volume    = {31},
+  pages     = {7--15},
+  year      = {2021}
+}
+
+% ---- Domain: grid and 3D voxel pathfinding benchmarks ----
+@article{sturtevant2012benchmarks,
+  author  = {Sturtevant, Nathan R.},
+  title   = {Benchmarks for Grid-Based Pathfinding},
+  journal = {IEEE Transactions on Computational Intelligence and AI in Games},
+  volume  = {4},
+  number  = {2},
+  pages   = {144--148},
+  year    = {2012}
+}
+
 @inproceedings{brewer2018voxel,
   author    = {Brewer, Daniel and Sturtevant, Nathan R.},
   title     = {Benchmarks for Pathfinding in {3D} Voxel Space},
@@ -117,10 +172,21 @@
 }
 
 @inproceedings{nobes2023voxel,
-  author    = {Nobes, Thomas K. and Harabor, Daniel D. and Wybrow, Michael and Walsh, Stuart D. C.},
+  author    = {Nobes, Thomas K. and Harabor, Daniel and Wybrow, Michael and Walsh, Stuart D. C.},
   title     = {Voxel Benchmarks for {3D} Pathfinding: Sandstone, Descent, and Industrial Plants},
   booktitle = {Proceedings of the International Symposium on Combinatorial Search (SoCS)},
+  pages     = {56--64},
   year      = {2023}
+}
+
+@article{kwa1989bs,
+  author  = {Kwa, James B. H.},
+  title   = {{BS*}: An admissible bidirectional staged heuristic search algorithm},
+  journal = {Artificial Intelligence},
+  volume  = {38},
+  number  = {2},
+  pages   = {95--109},
+  year    = {1989}
 }
 
 % ---- Software framework used ----
