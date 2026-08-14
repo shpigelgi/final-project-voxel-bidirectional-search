@@ -14,6 +14,7 @@
 \usepackage{amsmath}
 \usepackage{booktabs}
 \usepackage{pgfplots}
+\usepgfplotslibrary{statistics}
 \pgfplotsset{compat=1.16}
 
 \pdfinfo{
@@ -363,18 +364,18 @@ One reading has to be ruled out before the table can be read at all. A score bel
 
 \begin{table}[t]
 \centering\small
-\setlength{\tabcolsep}{3.5pt}
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{lcccccc}
 \toprule
 domain $\cdot$ mode & A* & BiA* & NBS & BAE* & MM & rev-A* \\
 \midrule
-plants $\cdot$ diag      & 1.00 & 1.62 & 1.69 & 1.57 & 3.39$^\dagger$ & 1.73 \\
+plants $\cdot$ diag      & 1.00 & 1.62 & 1.69 & 1.57 & 3.39$^{\dagger\ddagger}$ & 1.73 \\
 plants $\cdot$ nodiag    & 1.06 & 2.03 & 3.41$^\ddagger$ & 3.62 & 4.60$^\ddagger$ & 3.04$^\ddagger$ \\
 \addlinespace[2pt]
-sandstone $\cdot$ diag   & 1.00 & 1.54 & 1.66 & 0.95 & 2.63$^\dagger$ & 1.35 \\
+sandstone $\cdot$ diag   & 1.00 & 1.54 & 1.66 & 0.95 & 2.63$^{\dagger\ddagger}$ & 1.35 \\
 sandstone $\cdot$ nodiag & 1.00 & 1.73 & 1.56 & 1.25 & 1.63 & 1.58 \\
 \addlinespace[2pt]
-descent $\cdot$ diag     & 1.00 & 1.63 & 1.58 & 1.47 & 2.74$^\dagger$ & 1.38 \\
+descent $\cdot$ diag     & 1.00 & 1.63 & 1.58 & 1.47 & 2.74$^{\dagger\ddagger}$ & 1.38 \\
 descent $\cdot$ nodiag   & 1.00 & 1.78 & 1.72 & 1.72 & 1.84 & 1.47 \\
 \bottomrule
 \end{tabular}
@@ -384,14 +385,14 @@ descent $\cdot$ nodiag   & 1.00 & 1.78 & 1.72 & 1.72 & 1.84 & 1.47 \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/exp_over_mvc.pdf}
-\caption{Distribution of expansions divided by the bound, by group. A* concentrates on 1.0. The bidirectional algorithms sit above it with a thin tail below, except BAE* on the diagonal groups, where much of its mass is below 1.}
+\input{figures/dist}
+\caption{Distribution of expansions divided by the bound on the three diagonal groups. Boxes span the quartiles with the median inside, whiskers reach the 10th and 90th percentiles. A* is a spike on $1.00$, which is what its construction forces. BiA* and NBS hold narrow bands above the floor. BAE* is the one that reaches below it, and on sandstone $55.6\%$ of its mass sits there.}
 \label{fig:expfloor}
 \end{figure}
 
 A* sits on the bound in every configuration, at $1.00$ everywhere except plants under 6-connectivity at $1.06$, and it never falls below. Across all $47{,}277$ forward and $46{,}984$ reverse non-trivial instances there is not one sub-bound case for either. As the previous section explains, this comes from how the bound is built and not from A* being efficient.
 
-Two facts qualify the whole table. The first is that on most instances the bound is close to what A* expands - A*'s score is under $1.01$ on $77.6\%$ of them, and on $87.6\%$ to $97.9\%$ of the diagonal ones. Where that holds, a bidirectional score is close to a ratio against A*'s own contour rather than against an independent minimum. The second is that the bound is not tight for A* either, in the other direction. Its median is $1.00$ but its mean reaches $28.8$ on plants under 26-connectivity and $240.9$ on sandstone under 6-connectivity, with a maximum over $3\times10^5$. So the bound is close to A*'s contour on most instances and very loose on a minority, and neither the median nor the mean alone describes it.
+Two facts qualify the whole table. The first is that on most instances the bound is close to what A* expands - A*'s score is under $1.01$ on $77.6\%$ of them, and on $87.6\%$ to $97.9\%$ of the diagonal ones. Where that holds, a bidirectional score is close to a ratio against A*'s own contour rather than against an independent minimum. Scoring against the floor and scoring against A* bear that out, as on every diagonal group the two medians land within $1.5\%$ of each other for BiA*, NBS and BAE* alike. The second is that the bound is not tight for A* either, in the other direction. Its median is $1.00$ but its mean reaches $28.8$ on plants under 26-connectivity and $240.9$ on sandstone under 6-connectivity, with a maximum over $3\times10^5$. So the bound is close to A*'s contour on most instances and very loose on a minority, and neither the median nor the mean alone describes it.
 
 
 \subsubsection{How far each algorithm sits}
@@ -572,7 +573,7 @@ The legality audit found no illegal move, over an earlier subset rather than the
 \section{Conclusions and Summary}
 We set out to measure how close bidirectional search comes to a provable floor on 3D voxel maps, and to find where its theoretical efficiency translates into practical performance. The floor is the main instrument, computed per instance at contour sizes that need the threshold form rather than the explicit graph. On this domain the theory and the practice come apart more than the theory alone suggests, and the clearest cases are negative.
 
-Against the must-expand floor, A* is the algorithm to beat and it is hard to beat. Its median sits within $6\%$ of the bound in every configuration, and BiA* and NBS hold a band of $1.5$ to $1.7$ times the bound on the diagonal maps. That band is a good result rather than a poor one, as no algorithm of this class has a worst case better than twice the bound, and the bound itself is reached only by an algorithm given a parameter it cannot know in advance. Note that the floor tracks A*'s own contour on most instances, as the two agree to within $2.7\%$ across the diagonal groups, and it departs from A* only on the minority where the bound claims real room. That minority is where the comparison does independent work. On the $1{,}311$ instances where A* is at least twice the floor, A* sits at $6.13$ and BiA* at $3.53$, so BiA* is closer to the bound than A* is exactly where there is room to be.
+Against the must-expand floor, A* is the algorithm to beat and it is hard to beat. Its median sits within $6\%$ of the bound in every configuration, and BiA* and NBS hold a band of $1.5$ to $1.7$ times the bound on the diagonal maps. That band is a good result rather than a poor one, as no algorithm of this class has a worst case better than twice the bound, and the bound itself is reached only by an algorithm given a parameter it cannot know in advance. Note that the floor tracks A*'s own contour on most instances, as scoring against it and scoring against A* give medians within $1.5\%$ of each other on every diagonal group, and it departs from A* only on the minority where the bound claims real room. That minority is where the comparison does independent work. On the $1{,}311$ instances where A* is at least twice the floor, A* sits at $6.13$ and BiA* at $3.53$, so BiA* is closer to the bound than A* is exactly where there is room to be.
 
 BAE* comes closest to A*, and it is the only algorithm that overtakes it. As the heuristic weakens, BAE* ends below A* on two of the three maps we swept, crossing over on one. That is the direction the theory predicts. We do not read it as a family-level result, as the ratio varies as much within a family as between them, so we report the trend per map and claim no more.
 
