@@ -55,7 +55,7 @@ CXX=x86_64-conda-linux-gnu-g++ XFLAGS="-static-libstdc++ -static-libgcc" ./src/b
 Map and scenario are positional; everything else is a flag.
 
 ```bash
-M=benchmarks/industrial-plants/plant01
+M=benchmarks/voxel-maps/industrial-plants/plant01   # fetch-benchmarks.sh unzips here
 ./bin/voxdriver $M.3dmap $M.3dscen --algs astar,rastar,mm,nbs,bae,bia,gbfs \
                 --limit 10 --timeout 60 --mem-mb 7000
 ./bin/mvc       $M.3dmap $M.3dscen --limit 10      # the must-expand floor

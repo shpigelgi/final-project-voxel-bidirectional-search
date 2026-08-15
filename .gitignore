@@ -1,7 +1,10 @@
 # === Large external dependencies ===
 # Fetched locally by the setup scripts, never committed.
-hog2/                 # scripts/setup.sh
-benchmarks/           # scripts/fetch-benchmarks.sh
+# No trailing slash: an embedded git repo is recorded as a gitlink, which a
+# directory-only pattern does not match.
+hog2
+benchmarks
+raw-results
 
 # Python bytecode
 __pycache__/
@@ -22,8 +25,7 @@ a.out
 
 # === Run artifacts ===
 # results/ IS committed: it is the evidence the report's numbers rest on.
-# What is ignored here is the raw per-map dumps that aggregate into it.
-raw-results/
+# The raw per-map dumps that aggregate into it are ignored above.
 cluster/logs/
 cluster/manifest*.tsv
 *.log
