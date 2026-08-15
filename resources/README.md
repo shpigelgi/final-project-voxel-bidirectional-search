@@ -5,9 +5,11 @@ where the relevant code already lives inside HOG2.
 
 ## Papers (`papers/`)
 
-All 7 PDFs from Lior's email are here (extracted from `fwd.zip`). Suggested reading
-order (per the email: start with Siag; if clear, continue to Eckerle; otherwise read
-in numbered order):
+**The PDFs are not committed.** They are publisher copies and are not ours to
+redistribute, so `resources/papers/` is gitignored and the table below is the
+reading list rather than an index of shipped files. Every paper is cited in the
+report's bibliography. Suggested reading order (per the email: start with Siag;
+if clear, continue to Eckerle; otherwise read in numbered order):
 
 | # | File | Title |
 |---|------|-------|

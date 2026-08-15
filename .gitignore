@@ -46,3 +46,26 @@ deliverables/report/overleaf/*.out
 deliverables/report/overleaf/*.blg
 deliverables/report/overleaf/*.fls
 deliverables/report/overleaf/*.fdb_latexmk
+
+# === Not shipped in the public repo ===
+# Editor and agent tooling
+.claude/
+# Course materials: the brief and the grading guidelines are the instructor's,
+# not research artifacts, and are not ours to redistribute.
+instructions/
+# Third-party papers. Cite them, do not host them: these are publisher PDFs and
+# redistributing them is not ours to do. See resources/README.md for the list.
+resources/papers/
+# Report working files: drafts, review notes, per-round edit logs.
+deliverables/report/*_EDITS*.md
+deliverables/report/ADAM_*.md
+deliverables/report/FOR_ADAM*.md
+deliverables/report/PEER_REVIEW.md
+deliverables/report/DEFERRED_FINDINGS.md
+deliverables/report/TODO_*.md
+deliverables/report/*.docx
+deliverables/report/overleaf/*.bak
+deliverables/report/overleaf/t.txt
+deliverables/report/overleaf/sampg-*.png
+# Regenerated figure rasters; the paper builds its figures from figures/*.tex
+deliverables/report/figures/
