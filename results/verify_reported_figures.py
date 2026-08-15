@@ -3,7 +3,7 @@
 
 Run from the repository root:
 
-    python3 deliverables/results/verify_reported_figures.py
+    python3 results/verify_reported_figures.py
 
 Exits 0 if every figure reproduces, 1 otherwise. Each check names the paper
 location it covers, so a failure tells you which sentence or cell to fix.
@@ -28,8 +28,10 @@ import os
 import statistics as st
 import sys
 
-CLUSTER = "deliverables/results/cluster/combined_long.csv"
-CROSSOVER = "deliverables/results/crossover/representative"
+# Paths are resolved relative to this file, so the script runs from anywhere.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+CLUSTER = os.path.join(_HERE, "cluster", "combined_long.csv")
+CROSSOVER = os.path.join(_HERE, "crossover", "representative")
 
 SHORT = {"industrial-plants": "plants", "sandstone": "sandstone", "descent": "descent"}
 ALGS6 = ["astar", "bia", "nbs", "bae", "mm", "rastar"]

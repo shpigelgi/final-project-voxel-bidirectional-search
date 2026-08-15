@@ -100,7 +100,7 @@ static void runOne(VoxelMap &env, const char *tag, int idx, const std::string &a
 	} else if (alg == "nbs") {
 		NBS<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();
-		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); cost = env.GetPathLength(path);
+		expanded = a.GetNodesExpanded(); generated = a.GetNodesTouched(); nipped = a.GetNodesDiscarded(); cost = env.GetPathLength(path);
 	} else if (alg == "bia") {
 		BiAStar<voxState, voxAction, VoxelMap> a;
 		t.StartTimer(); a.GetPath(&env, s, g, &env, &env, path); t.EndTimer();

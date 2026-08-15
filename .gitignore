@@ -1,71 +1,49 @@
-# === Large external dependencies (cloned/downloaded locally, not committed) ===
-# HOG2 search framework — clone with workspace/scripts/setup.sh
-workspace/hog2/
-# Warthog voxel-map benchmarks — download with workspace/scripts/fetch-benchmarks.sh
-workspace/benchmarks/
-# Live Overleaf project (git bridge clone, read-only mirror) — see REPO_GUIDE.md
-deliverables/report/overleaf-live/
+# === Large external dependencies ===
+# Fetched locally by the setup scripts, never committed.
+hog2/                 # scripts/setup.sh
+benchmarks/           # scripts/fetch-benchmarks.sh
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# The old workspace/ tree: HOG2, benchmarks and raw run output live here
+# untracked. Our code moved to src/, cluster/, scripts/ at the repo root.
+workspace/
 
 # === Build artifacts ===
-workspace/**/bin/
-workspace/**/build/objs/
+bin/
+**/bin/
+**/build/objs/
 *.o
 *.a
-*.out
 *.exe
 a.out
 
-# === Experiment outputs (keep curated results in deliverables/, ignore raw dumps) ===
-workspace/results/
+# === Run artifacts ===
+# results/ IS committed: it is the evidence the report's numbers rest on.
+# What is ignored here is the raw per-map dumps that aggregate into it.
+raw-results/
+cluster/logs/
+cluster/manifest*.tsv
 *.log
 *.tmp
 
-# === Cluster run artifacts (generated) ===
-workspace/bin/
-workspace/cluster/logs/
-workspace/cluster/manifest*.tsv
+# === Not part of this repository ===
+# The report lives with the submission, not here. This repo is the code and the
+# commands needed to reproduce the experiments behind it.
+deliverables/
+# The assignment brief and grading guidelines are the instructor's material.
+instructions/
+# Third-party papers: cite them, do not host them. These are publisher PDFs and
+# redistributing them is not ours to do.
+resources/
+# Agent and editor tooling.
+.claude/
+.vscode/
+.idea/
 
-# === Papers: PDFs can be large; uncomment to keep them out of git ===
-# resources/papers/*.pdf
-
-# === OS / editor cruft ===
+# === OS cruft ===
 .DS_Store
 *.swp
-.idea/
-.vscode/
 *~
-
-# Overleaf upload folder — keep only the source files (.tex, .sty, .bst, .bib)
-deliverables/report/overleaf/*.pdf
-deliverables/report/overleaf/*.aux
-deliverables/report/overleaf/*.log
-deliverables/report/overleaf/*.out
-# .bbl IS committed: AAAI camera-ready expects it, and it lets a single
-# pdflatex pass resolve citations without running bibtex.
-!deliverables/report/overleaf/report.bbl
-deliverables/report/overleaf/*.blg
-deliverables/report/overleaf/*.fls
-deliverables/report/overleaf/*.fdb_latexmk
-
-# === Not shipped in the public repo ===
-# Editor and agent tooling
-.claude/
-# Course materials: the brief and the grading guidelines are the instructor's,
-# not research artifacts, and are not ours to redistribute.
-instructions/
-# Third-party papers. Cite them, do not host them: these are publisher PDFs and
-# redistributing them is not ours to do. See resources/README.md for the list.
-resources/papers/
-# Report working files: drafts, review notes, per-round edit logs.
-deliverables/report/*_EDITS*.md
-deliverables/report/ADAM_*.md
-deliverables/report/FOR_ADAM*.md
-deliverables/report/PEER_REVIEW.md
-deliverables/report/DEFERRED_FINDINGS.md
-deliverables/report/TODO_*.md
-deliverables/report/*.docx
-deliverables/report/overleaf/*.bak
-deliverables/report/overleaf/t.txt
-deliverables/report/overleaf/sampg-*.png
-# Regenerated figure rasters; the paper builds its figures from figures/*.tex
-deliverables/report/figures/

@@ -78,8 +78,9 @@ static void Contour(VoxelMap &env, const voxState &origin, const voxState &towar
 
 // |VC| = min_tau ( #{g_F < tau} + #{g_B < C*-tau} ), scanning tau over the
 // distinct forward g-values (plus "cover all forward").
-static uint64_t MinVertexCover(std::vector<double> fwd, std::vector<double> bwd, double Cstar)
+static uint64_t MinVertexCover(std::vector<double> fwd, std::vector<double> bwd, double Cstar, double &bestTau, double epsilon = 0.0)
 {
+	bestTau = Cstar;   // default: all-forward cover (p*=1)
 	std::sort(fwd.begin(), fwd.end());
 	std::sort(bwd.begin(), bwd.end());
 	const double eps = 1e-7;
@@ -102,9 +103,9 @@ static uint64_t MinVertexCover(std::vector<double> fwd, std::vector<double> bwd,
 		uint64_t fwdCost = (uint64_t)i;
 		uint64_t bwdCost;
 		if (i == fwd.size()) bwdCost = 0;
-		else                 bwdCost = bwdCountLess(Cstar - fwd[i]);
+		else                 bwdCost = bwdCountLess(Cstar - epsilon - fwd[i]);
 		uint64_t total = fwdCost + bwdCost;
-		if (total < best) best = total;
+		if (total < best) { best = total; bestTau = (i == fwd.size()) ? Cstar : fwd[i]; }
 		// advance past all forward nodes sharing fwd[i] (same threshold)
 		if (i == fwd.size()) break;
 		double v = fwd[i];
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
 	TemplateAStar<voxState, voxAction, VoxelMap> astar;
 	std::vector<voxState> path;
 
-	printf("instance,cstar,fwd_cand,bwd_cand,mvc\n");
+	printf("instance,cstar,fwd_cand,bwd_cand,mvc,mvc_eps,pstar\n");
 	char line[512];
 	int idx = 0, done = 0;
 	while (fgets(line, sizeof(line), f) && done < limit)
@@ -160,7 +161,10 @@ int main(int argc, char *argv[])
 		std::vector<double> fwdG, bwdG;
 		Contour(env, s, g, Cstar, fwdG);   // forward: heuristic toward goal
 		Contour(env, g, s, Cstar, bwdG);   // backward: heuristic toward start
-		uint64_t mvc = MinVertexCover(fwdG, bwdG, Cstar);
+		double bestTau = Cstar, tauEps = Cstar;
+		uint64_t mvc = MinVertexCover(fwdG, bwdG, Cstar, bestTau, 0.0);
+		uint64_t mvcEps = MinVertexCover(fwdG, bwdG, Cstar, tauEps, 1.0);   // epsilon=1 refined cover (matches MM/NBS)
+		double pstar = (Cstar > 0) ? (bestTau / Cstar) : 1.0;   // offline-optimal fMM split g_F<p*C*
 
 		const char *di = getenv("DUMP_INST");
 		if (di && idx == atoi(di)) {
@@ -170,7 +174,7 @@ int main(int argc, char *argv[])
 					idx, fwdG.size(), bwdG.size(), Cstar, (unsigned long long)mvc);
 		}
 
-		printf("%d,%.6f,%zu,%zu,%llu\n", idx, Cstar, fwdG.size(), bwdG.size(), (unsigned long long)mvc);
+		printf("%d,%.6f,%zu,%zu,%llu,%llu,%.4f\n", idx, Cstar, fwdG.size(), bwdG.size(), (unsigned long long)mvc, (unsigned long long)mvcEps, pstar);
 		fflush(stdout);
 		idx++; done++;
 	}
