@@ -19,4 +19,8 @@ fi
 echo
 echo "Done. HOG2 is at: $HOG2_DIR"
 echo "Next: run scripts/fetch-benchmarks.sh to download the Warthog voxel maps."
-python3 "$(dirname "$0")/../hog2-patches/add_bae_nipped.py" 2>/dev/null || true   # nodesNipped counter for the floor diagnostic
+# HOG2 is gitignored, so these counters live as patch scripts, applied here. No output
+# silencing: a patch that fails to apply must abort setup (set -e) rather than look like a
+# success, which is how a missing patch previously went unnoticed. Both are idempotent.
+python3 "$(dirname "$0")/../hog2-patches/add_bae_nipped.py"      # nodesNipped counter for BAE* (floor diagnostic)
+python3 "$(dirname "$0")/../hog2-patches/add_nbs_discarded.py"   # nodesDiscarded counter for NBS (sub-floor diagnostic)

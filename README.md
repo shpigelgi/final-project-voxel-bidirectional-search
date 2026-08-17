@@ -26,7 +26,7 @@ src/          our code: voxel environment, BiA*, the experiment driver,
 cluster/      the Slurm pipeline that produced the results, plus aggregation,
               plotting and verification scripts
 scripts/      setup.sh (clone HOG2), fetch-benchmarks.sh (download the maps)
-hog2-patches/ a counter we add to HOG2's BAE* for the floor diagnostic
+hog2-patches/ counters we add to HOG2's BAE* and NBS for the floor diagnostics
 results/      the released per-instance data behind every reported number
 ```
 
