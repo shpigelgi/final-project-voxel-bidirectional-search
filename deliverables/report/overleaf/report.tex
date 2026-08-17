@@ -554,13 +554,14 @@ Five things follow directly from what we could not settle here.
 \item \textbf{Measure generations, and run MM0.} Our driver records generated nodes and our aggregation drops them, so an axis for generated nodes costs a re-aggregation rather than a re-run. MM0 is the comparison \citet{holte2017mm} predict will favor the brute-force variant under a weak heuristic, and weakening a heuristic is not the same as removing it, so our sweep does not test it.
 \end{itemize}
 
-\section{Reproducibility}
+\section{Code}
 % Required by the guidelines: the report must link the code used to run the experiments and prepare the figures. % A URL cannot be hyphenated, so in a two-column measure justification leaves a badly stretched line. Set it ragged and let it break at the separators.
 Our code, the released per-instance results, and the scripts that regenerate every number and figure in this paper are at
 \begingroup\raggedright\sloppy \url{https://github.com/shpigelgi/final-project-voxel-bidirectional-search}\par
 \endgroup
 
-\noindent The \texttt{README} there gives the procedure in full. In outline, \texttt{scripts/setup.sh} clones HOG2 and applies our patches, \texttt{scripts/fetch-benchmarks.sh} downloads the voxel maps, and \texttt{src/build.sh} builds our three binaries: \texttt{voxdriver} for the searches, \texttt{mvc} for the floor, \texttt{validate} for the legality audit. Dependencies are a C++17 compiler and Python 3, standard library only. HOG2 and the benchmarks run to several GB and are fetched rather than committed.
+\section{Reproducibility}
+The repository's \texttt{README} gives the procedure in full. In outline, \texttt{scripts/setup.sh} clones HOG2 and applies our patches, \texttt{scripts/fetch-benchmarks.sh} downloads the voxel maps, and \texttt{src/build.sh} builds our three binaries: \texttt{voxdriver} for the searches, \texttt{mvc} for the floor, \texttt{validate} for the legality audit. Dependencies are a C++17 compiler and Python 3, standard library only. HOG2 and the benchmarks run to several GB and are fetched rather than committed.
 
 Reproducing our reported numbers needs none of that, as we release the per-instance results with the code. \texttt{verify\_reported\_figures.py} recomputes all $139$ printed figures and flags any that do not reproduce, and \texttt{figure\_values.py} recomputes the distributions behind the plots. Rerunning the sweep itself is a Slurm array, documented in \texttt{RUNBOOK.md}. Three aggregation conventions matter if you recompute by hand, and the \texttt{README} states them: ratios are medianed per instance rather than formed from two medians, comparisons across algorithms use only the instances every algorithm solved, and a zero floor leaves the ratio undefined, so those instances leave the floor axis.
 
@@ -608,6 +609,6 @@ A second argument reaches the same conclusion without the rebuild. The $\varepsi
 
 The counts show why so small a rule moves so much. Across the twenty-four the discard fires between $732$ and $148{,}064$ times, while the expansions it saves run from $1.2$ to $8.5$ million, two to three orders of magnitude more. Each discarded node sits at the root of a subtree that is then never generated, so how high in the search it sits sets the amplification, and that varies from $40$ to $2455$ times rather than holding at any one figure. The 6-connected instances make the point most sharply, as they nip the fewest nodes and gain the most from each - on one of them $732$ discards account for $1.8$ million expansions.
 
-\texttt{ADMISSIBLE} is undocumented. It appears twice as a commented-out define, each time with no note of what it does or that leaving it off costs admissibility, and no README or paper in the framework mentions it. The one line of prose that refers to it is the misleading one quoted above.
+\texttt{ADMISSIBLE} is undocumented. It appears twice as a commented-out define, neither time noting what it does or that leaving it off costs admissibility, and the framework's only prose reference to it is the misleading line quoted above.
 
 \end{document}
