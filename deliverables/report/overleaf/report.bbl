@@ -1,0 +1,110 @@
+\begin{thebibliography}{21}
+\providecommand{\natexlab}[1]{#1}
+
+\bibitem[{Alc{\'a}zar(2021)}]{alcazar2021consistent}
+Alc{\'a}zar, V. 2021.
+\newblock The Consistent Case in Bidirectional Search and a Bucket-to-Bucket Algorithm as a Middle Ground between Front-to-End and Front-to-Front.
+\newblock In \emph{Proceedings of the International Conference on Automated Planning and Scheduling (ICAPS)}, volume~31, 7--15.
+
+\bibitem[{Alc{\'a}zar, Riddle, and Barley(2020)}]{alcazar2020unifying}
+Alc{\'a}zar, V.; Riddle, P.~J.; and Barley, M. 2020.
+\newblock A Unifying View on Individual Bounds and Heuristic Inaccuracies in Bidirectional Search.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial Intelligence}, volume~34, 2327--2334.
+
+\bibitem[{Barker and Korf(2015)}]{barker2015limitations}
+Barker, J.~K.; and Korf, R.~E. 2015.
+\newblock Limitations of Front-to-End Bidirectional Heuristic Search.
+\newblock In \emph{Proceedings of the AAAI Conference on Artificial Intelligence}, 1086--1092.
+
+\bibitem[{Brewer and Sturtevant(2018)}]{brewer2018voxel}
+Brewer, D.; and Sturtevant, N.~R. 2018.
+\newblock Benchmarks for Pathfinding in {3D} Voxel Space.
+\newblock In \emph{Proceedings of the International Symposium on Combinatorial Search (SoCS)}, 143--147.
+
+\bibitem[{Chen et~al.(2017)Chen, Holte, Zilles, and Sturtevant}]{chen2017nbs}
+Chen, J.; Holte, R.~C.; Zilles, S.; and Sturtevant, N.~R. 2017.
+\newblock Front-to-End Bidirectional Heuristic Search with Near-Optimal Node Expansions.
+\newblock In \emph{Proceedings of the International Joint Conference on Artificial Intelligence (IJCAI)}, 489--495.
+
+\bibitem[{Dechter and Pearl(1985)}]{dechter1985generalized}
+Dechter, R.; and Pearl, J. 1985.
+\newblock Generalized Best-First Search Strategies and the Optimality of {A}*.
+\newblock \emph{Journal of the ACM}, 32(3): 505--536.
+
+\bibitem[{Eckerle et~al.(2017)Eckerle, Chen, Sturtevant, Zilles, and Holte}]{eckerle2017sufficient}
+Eckerle, J.; Chen, J.; Sturtevant, N.~R.; Zilles, S.; and Holte, R.~C. 2017.
+\newblock Sufficient Conditions for Node Expansion in Bidirectional Heuristic Search.
+\newblock In \emph{Proceedings of the International Conference on Automated Planning and Scheduling (ICAPS)}, 79--87.
+
+\bibitem[{Hart, Nilsson, and Raphael(1968)}]{hart1968astar}
+Hart, P.~E.; Nilsson, N.~J.; and Raphael, B. 1968.
+\newblock A Formal Basis for the Heuristic Determination of Minimum Cost Paths.
+\newblock \emph{IEEE Transactions on Systems Science and Cybernetics}, 4(2): 100--107.
+
+\bibitem[{Holte et~al.(2017)Holte, Felner, Sharon, Sturtevant, and Chen}]{holte2017mm}
+Holte, R.~C.; Felner, A.; Sharon, G.; Sturtevant, N.~R.; and Chen, J. 2017.
+\newblock {MM}: A Bidirectional Search Algorithm that is Guaranteed to Meet in the Middle.
+\newblock \emph{Artificial Intelligence}, 252: 232--266.
+
+\bibitem[{Kaindl and Kainz(1997)}]{kaindl1997reconsidered}
+Kaindl, H.; and Kainz, G. 1997.
+\newblock Bidirectional Heuristic Search Reconsidered.
+\newblock \emph{Journal of Artificial Intelligence Research}, 7: 283--317.
+
+\bibitem[{Kwa(1989)}]{kwa1989bs}
+Kwa, J. B.~H. 1989.
+\newblock {BS*}: An admissible bidirectional staged heuristic search algorithm.
+\newblock \emph{Artificial Intelligence}, 38(1): 95--109.
+
+\bibitem[{Nobes et~al.(2023)Nobes, Harabor, Wybrow, and Walsh}]{nobes2023voxel}
+Nobes, T.~K.; Harabor, D.; Wybrow, M.; and Walsh, S. D.~C. 2023.
+\newblock Voxel Benchmarks for {3D} Pathfinding: Sandstone, Descent, and Industrial Plants.
+\newblock In \emph{Proceedings of the International Symposium on Combinatorial Search (SoCS)}, 56--64.
+
+\bibitem[{Pearl(1984)}]{pearl1984heuristics}
+Pearl, J. 1984.
+\newblock \emph{Heuristics: Intelligent Search Strategies for Computer Problem Solving}.
+\newblock Addison-Wesley.
+
+\bibitem[{Pohl(1971)}]{pohl1971bidirectional}
+Pohl, I. 1971.
+\newblock Bi-directional Search.
+\newblock In Meltzer, B.; and Michie, D., eds., \emph{Machine Intelligence 6}, 127--140. Edinburgh University Press.
+
+\bibitem[{Sadhukhan(2013)}]{sadhukhan2013bae}
+Sadhukhan, S.~K. 2013.
+\newblock Bidirectional Heuristic Search Based on Error Estimate.
+\newblock \emph{CSI Journal of Computing}, 2(1--2): S1:57--S1:64.
+
+\bibitem[{Shaham et~al.(2017)Shaham, Felner, Chen, and Sturtevant}]{shaham2017minimal}
+Shaham, E.; Felner, A.; Chen, J.; and Sturtevant, N.~R. 2017.
+\newblock The Minimal Set of States that Must Be Expanded in a Front-to-End Bidirectional Search.
+\newblock In \emph{Proceedings of the International Symposium on Combinatorial Search (SoCS)}, 82--90.
+
+\bibitem[{Shaham et~al.(2018)Shaham, Felner, Sturtevant, and Rosenschein}]{shaham2018consistent}
+Shaham, E.; Felner, A.; Sturtevant, N.~R.; and Rosenschein, J.~S. 2018.
+\newblock Minimizing Node Expansions in Bidirectional Search with Consistent Heuristics.
+\newblock In \emph{Proceedings of the International Symposium on Combinatorial Search (SoCS)}, 81--89.
+
+\bibitem[{Siag and Shperberg(2025)}]{siag2025bridging}
+Siag, L.; and Shperberg, S.~S. 2025.
+\newblock Bridging Theory and Practice in Bidirectional Heuristic Search with Front-to-End Consistent Heuristics.
+\newblock \emph{Artificial Intelligence}, 348: 104420.
+
+\bibitem[{Siag et~al.(2023)Siag, Shperberg, Felner, and Sturtevant}]{siag2023frontToEnd}
+Siag, L.; Shperberg, S.~S.; Felner, A.; and Sturtevant, N.~R. 2023.
+\newblock Front-to-End Bidirectional Heuristic Search with Consistent Heuristics: Enumerating and Evaluating Algorithms and Bounds.
+\newblock In \emph{Proceedings of the International Joint Conference on Artificial Intelligence (IJCAI)}, 5631--5638.
+
+\bibitem[{Sturtevant()}]{sturtevant2016hog2}
+Sturtevant, N.~R. ????
+\newblock {HOG2}: Hierarchical Open Graph 2.
+\newblock \url{https://github.com/MovingAILab/hog2}.
+\newblock Accessed 2026-08.
+
+\bibitem[{Sturtevant(2012)}]{sturtevant2012benchmarks}
+Sturtevant, N.~R. 2012.
+\newblock Benchmarks for Grid-Based Pathfinding.
+\newblock \emph{IEEE Transactions on Computational Intelligence and AI in Games}, 4(2): 144--148.
+
+\end{thebibliography}
