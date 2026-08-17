@@ -35,6 +35,9 @@ cluster/manifest*.tsv
 # The report lives with the submission, not here. This repo is the code and the
 # commands needed to reproduce the experiments behind it.
 deliverables/
+# Review helper: lists the %%> notes left in the report sources, which live under
+# deliverables/. Useless without them, so it ships with the report, not here.
+/notes
 # The assignment brief and grading guidelines are the instructor's material.
 instructions/
 # Third-party papers: cite them, do not host them. These are publisher PDFs and
