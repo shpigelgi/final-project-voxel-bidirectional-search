@@ -32,8 +32,10 @@ cluster/manifest*.tsv
 *.tmp
 
 # === Not part of this repository ===
-# The report lives with the submission, not here. This repo is the code and the
-# commands needed to reproduce the experiments behind it.
+# Working files, notes and build products under deliverables/ stay out. The
+# report's LaTeX sources are a deliberate exception: they are force-added, so
+# that this repo rebuilds the paper as well as the results. See
+# deliverables/report/overleaf/.
 deliverables/
 # Review helper: lists the %%> notes left in the report sources, which live under
 # deliverables/. Useless without them, so it ships with the report, not here.
