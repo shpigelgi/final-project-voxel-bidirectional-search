@@ -57,7 +57,7 @@
 \begin{document}
 \maketitle
 
-\begin{abstract} Bidirectional search is meant to beat A* by working from both ends at once. On hard domains it often does not, and it is hard to say why when your only yardstick is another algorithm. We therefore measure against a fixed reference: for each instance, the number of expansions any correct front-to-end search must make. We run seven algorithms against it on three families of 3D voxel maps, under two movement models, one stepping along the axes only and one allowing diagonal steps as well.
+\begin{abstract} Bidirectional search is meant to beat A* by working from both ends at once. On hard domains it often does not, and it is hard to say why when your only yardstick is another algorithm. We therefore measure against a fixed lower bound: for each instance, the number of expansions any correct front-to-end search must make. We run seven algorithms against it on three families of 3D voxel maps, under two movement models, one stepping along the axes only and one allowing diagonal steps as well.
 
   The first answer is that there is little room to begin with. A*'s median sits within $6\%$ of the bound in every configuration, and BiA* and NBS hold a band of $1.5$ to $1.7$ times it on the diagonal maps.
 
