@@ -124,16 +124,16 @@ Siag, L.; Shperberg, S.~S.; Felner, A.; and Sturtevant, N.~R. 2023.
 \newblock In \emph{Proceedings of the International Joint Conference on
   Artificial Intelligence (IJCAI)}, 5631--5638.
 
-\bibitem[{Sturtevant()}]{sturtevant2016hog2}
-Sturtevant, N.~R. ????
-\newblock {HOG2}: Hierarchical Open Graph 2.
-\newblock \url{https://github.com/MovingAILab/hog2}.
-\newblock Accessed 2026-08.
-
 \bibitem[{Sturtevant(2012)}]{sturtevant2012benchmarks}
 Sturtevant, N.~R. 2012.
 \newblock Benchmarks for Grid-Based Pathfinding.
 \newblock \emph{IEEE Transactions on Computational Intelligence and AI in
   Games}, 4(2): 144--148.
+
+\bibitem[{Sturtevant(2016)}]{sturtevant2016hog2}
+Sturtevant, N.~R. 2016.
+\newblock {HOG2}: Hierarchical Open Graph 2.
+\newblock \url{https://github.com/MovingAILab/hog2}.
+\newblock Accessed 2026-08.
 
 \end{thebibliography}
