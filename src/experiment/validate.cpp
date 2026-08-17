@@ -42,9 +42,60 @@ static bool legalStep(const VoxelMap &env, const voxState &a, const voxState &b,
 	return true;
 }
 
+// Negative control: exercise legalStep against a hand-built configuration whose
+// correct answers are known independently of legalStep's own logic. A checker
+// hard-wired to return true would fail cases 1,3,4,5,6; a checker that skipped the
+// clip test would fail 1 and 3. Exits non-zero if any assertion fails. legalStep
+// itself is NOT modified by this test — it only observes it.
+static int selfTest()
+{
+	const char *mapPath = "/tmp/vox_selftest.3dmap";
+	FILE *m = fopen(mapPath, "w");
+	if (!m) { fprintf(stderr, "self-test: cannot write %s\n", mapPath); return 3; }
+	// type "voxel": listed voxels are OBSTACLES, everything else is free.
+	fprintf(m, "voxel 10 10 10\n");
+	fprintf(m, "3 2 2\n");   // a clipped voxel of the corner move (2,2,2)->(3,3,3)
+	fprintf(m, "3 5 2\n");   // a clipped face-neighbour of the edge move (2,5,2)->(3,6,2)
+	fprintf(m, "8 8 8\n");   // for from-blocked / into-blocked
+	fclose(m);
+
+	VoxelMap env(mapPath, true);   // each case passes its own diag flag below
+
+	struct Case { const char *name; voxState a, b; bool diag; bool wantLegal; const char *wantWhy; };
+	Case cases[] = {
+		{ "corner-clip-blocked", {2,2,2}, {3,3,3}, true,  false, "clip" },              // 1
+		{ "corner-box-free",     {6,6,6}, {7,7,7}, true,  true,  0 },                   // 2
+		{ "edge-clip-blocked",   {2,5,2}, {3,6,2}, true,  false, "clip" },              // 3
+		{ "non-adjacent",        {2,2,7}, {2,2,9}, true,  false, "not-a-neighbor" },    // 4
+		{ "diagonal-in-6conn",   {6,2,2}, {7,3,2}, false, false, "diagonal-in-6conn" }, // 5
+		{ "from-blocked",        {8,8,8}, {8,8,7}, true,  false, "from-blocked" },      // 6a
+		{ "into-blocked",        {8,8,7}, {8,8,8}, true,  false, "into-blocked" },      // 6b
+	};
+
+	int nCase = (int)(sizeof(cases)/sizeof(cases[0])), failed = 0;
+	printf("=== legalStep self-test (negative control) ===\n");
+	for (int i = 0; i < nCase; i++) {
+		Case &c = cases[i];
+		const char *why = "";
+		bool got = legalStep(env, c.a, c.b, c.diag, &why);
+		bool ok = c.wantLegal ? (got == true)
+		                      : (got == false && c.wantWhy && why && !strcmp(why, c.wantWhy));
+		printf("  [%s] %-18s (%d,%d,%d)->(%d,%d,%d) diag=%d : got legal=%-5s why=\"%s\" | want legal=%-5s why=\"%s\"\n",
+			   ok ? "PASS" : "FAIL", c.name, c.a.x,c.a.y,c.a.z, c.b.x,c.b.y,c.b.z, (int)c.diag,
+			   got ? "true" : "false", why ? why : "",
+			   c.wantLegal ? "true" : "false", c.wantWhy ? c.wantWhy : "");
+		if (!ok) failed++;
+	}
+	printf("self-test: %d/%d assertions passed%s\n", nCase - failed, nCase, failed ? "   ** FAILURES **" : "");
+	remove(mapPath);
+	return failed ? 2 : 0;
+}
+
 int main(int argc, char *argv[])
 {
-	if (argc < 3) { fprintf(stderr, "Usage: %s <map> <scen> [--limit N] [--no-diagonals]\n", argv[0]); return 1; }
+	for (int i = 1; i < argc; i++)
+		if (!strcmp(argv[i], "--self-test")) return selfTest();
+	if (argc < 3) { fprintf(stderr, "Usage: %s <map> <scen> [--limit N] [--no-diagonals] | %s --self-test\n", argv[0], argv[0]); return 1; }
 	const char *mapFile = argv[1], *scenFile = argv[2];
 	int limit = 50; bool diag = true;
 	for (int i = 3; i < argc; i++) {
