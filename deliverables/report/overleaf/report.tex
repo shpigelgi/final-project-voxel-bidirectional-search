@@ -554,10 +554,15 @@ Five things follow directly from what we could not settle here.
 \item \textbf{Measure generations, and run MM0.} Our driver records generated nodes and our aggregation drops them, so an axis for generated nodes costs a re-aggregation rather than a re-run. MM0 is the comparison \citet{holte2017mm} predict will favor the brute-force variant under a weak heuristic, and weakening a heuristic is not the same as removing it, so our sweep does not test it.
 \end{itemize}
 
-\section{Code}
-% A long URL cannot be justified in a two-column measure; allow it to break % at the separators and relax spacing for this paragraph only. % Required by the guidelines. Set ragged: a URL cannot be hyphenated, so in a % two-column measure justification leaves a badly stretched line.
+\section{Reproducibility}
+% Required by the guidelines: the report must link the code used to run the experiments and prepare the figures. % A URL cannot be hyphenated, so in a two-column measure justification leaves a badly stretched line. Set it ragged and let it break at the separators.
+Our code, the released per-instance results, and the scripts that regenerate every number and figure in this paper are at
 \begingroup\raggedright\sloppy \url{https://github.com/shpigelgi/final-project-voxel-bidirectional-search}\par
 \endgroup
+
+\noindent The \texttt{README} there gives the procedure in full. In outline, \texttt{scripts/setup.sh} clones HOG2 and applies our patches, \texttt{scripts/fetch-benchmarks.sh} downloads the voxel maps, and \texttt{src/build.sh} builds our three binaries: \texttt{voxdriver} for the searches, \texttt{mvc} for the floor, \texttt{validate} for the legality audit. Dependencies are a C++17 compiler and Python 3, standard library only. HOG2 and the benchmarks run to several GB and are fetched rather than committed.
+
+Reproducing our reported numbers needs none of that, as we release the per-instance results with the code. \texttt{verify\_reported\_figures.py} recomputes all $139$ printed figures and flags any that do not reproduce, and \texttt{figure\_values.py} recomputes the distributions behind the plots. Rerunning the sweep itself is a Slurm array, documented in \texttt{RUNBOOK.md}. Three aggregation conventions matter if you recompute by hand, and the \texttt{README} states them: ratios are medianed per instance rather than formed from two medians, comparisons across algorithms use only the instances every algorithm solved, and a zero floor leaves the ratio undefined, so those instances leave the floor axis.
 
 % \nocite{*} % uncomment to list every reference before you cite them % aaai2027.sty already sets the bibliography style; do NOT add \bibliographystyle.
 \bibliography{references}
