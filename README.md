@@ -36,11 +36,17 @@ together they run to several GB.
 ## Setup
 
 ```bash
-./scripts/setup.sh                      # clone HOG2 into hog2/ and apply our patch
+./scripts/setup.sh                      # clone HOG2 at the pinned revision, apply our patches
 ./scripts/fetch-benchmarks.sh           # industrial-plants + sandstone
 ./scripts/fetch-benchmarks.sh all       # add descent (many GB) and warframe
 ./src/build.sh bin                      # build voxdriver, mvc, validate into bin/
 ```
+
+HOG2 is pinned to commit `af9d42d` on its `PDB-refactor` branch, the revision every
+number in the report was produced with. Upstream's default branch moves, so an
+unpinned clone would quietly give a later HOG2, where our patches may fail to apply
+or apply to changed code. `setup.sh` checks the commit out detached and fails loudly
+if it cannot get it. Bump the pin only together with a re-run of the sweep.
 
 Requirements: a C++17 compiler and Python 3 (standard library only). No GPU, no
 Python packages. `build.sh` honours `CXX` and `XFLAGS`, which is how it is built
